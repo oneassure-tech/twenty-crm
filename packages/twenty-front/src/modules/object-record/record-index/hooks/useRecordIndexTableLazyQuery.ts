@@ -2,8 +2,12 @@ import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadata
 import { useLazyFindManyRecords } from '@/object-record/hooks/useLazyFindManyRecords';
 import { useRelevantRecordsGqlFields } from '@/object-record/record-field/hooks/useRelevantRecordsGqlFields';
 import { useFindManyRecordIndexTableParams } from '@/object-record/record-index/hooks/useFindManyRecordIndexTableParams';
+import { type WatchQueryFetchPolicy } from '@apollo/client';
 
-export const useRecordIndexTableLazyQuery = (objectNameSingular: string) => {
+export const useRecordIndexTableLazyQuery = (
+  objectNameSingular: string,
+  fetchPolicy?: WatchQueryFetchPolicy,
+) => {
   const params = useFindManyRecordIndexTableParams(objectNameSingular);
 
   const { objectMetadataItem } = useObjectMetadataItem({
@@ -18,6 +22,7 @@ export const useRecordIndexTableLazyQuery = (objectNameSingular: string) => {
     useLazyFindManyRecords({
       ...params,
       recordGqlFields,
+      fetchPolicy,
     });
 
   return {
