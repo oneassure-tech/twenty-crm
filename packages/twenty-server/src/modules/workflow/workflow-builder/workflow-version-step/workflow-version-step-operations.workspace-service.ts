@@ -512,9 +512,12 @@ export class WorkflowVersionStepOperationsWorkspaceService {
               ...BASE_STEP_DEFINITION,
               input: {
                 objectName: '',
-                // Defaults to the record that triggered the run, which is the
-                // case this action exists for. Editable in the step panel.
-                objectRecordId: '{{trigger.object.id}}',
+                // Left empty on purpose. The path to the triggering record
+                // depends on the trigger type -- a database update event
+                // exposes it as {{trigger.properties.after.id}}, not
+                // {{trigger.object.id}} -- so the Record picker fills this in
+                // rather than us guessing a path that may not resolve.
+                objectRecordId: '',
                 fieldName: '',
                 fieldMetadataId: '',
                 label: '',
