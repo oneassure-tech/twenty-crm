@@ -1,11 +1,9 @@
 import { useModal } from '@/ui/layout/modal/hooks/useModal';
-import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
 import {
   PENDING_REQUIRE_FIELD_MODAL_ID,
   PendingRequireFieldModal,
 } from '@/workflow/pending-input/components/PendingRequireFieldModal';
 import { usePendingRequireFieldStep } from '@/workflow/pending-input/hooks/usePendingRequireFieldStep';
-import { dismissedPendingRequireFieldRunIdsState } from '@/workflow/pending-input/states/dismissedPendingRequireFieldRunIdsState';
 import { useEffect } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 
@@ -15,14 +13,14 @@ import { isDefined } from 'twenty-shared/utils';
  *
  * Mounted once for the whole app so the prompt reaches them wherever they are,
  * rather than only inside the workflow run side panel.
+ *
+ * There is no local "dismissed" list: the prompt disappears only because the
+ * run stopped waiting -- either it was answered, or it was discarded, which
+ * stops the run outright. That is what keeps it on screen until dealt with.
  */
 export const PendingRequireFieldPrompt = () => {
   const { pendingStep } = usePendingRequireFieldStep();
-  const { openModal } = useModal();
-
-  const [dismissedRunIds, setDismissedRunIds] = useAtomState(
-    dismissedPendingRequireFieldRunIdsState,
-  );
+  const { openModal, closeModal } = useModal();
 
   const pendingWorkflowRunId = pendingStep?.workflowRunId;
 
@@ -36,17 +34,12 @@ export const PendingRequireFieldPrompt = () => {
     return null;
   }
 
-  const handleDismiss = () => {
-    setDismissedRunIds([...dismissedRunIds, pendingStep.workflowRunId]);
-  };
-
   return (
     <PendingRequireFieldModal
       // Remounts on a different run so the input never keeps a stale answer.
       key={pendingStep.workflowRunId}
       pendingStep={pendingStep}
-      onDismiss={handleDismiss}
-      onSubmitted={handleDismiss}
+      onClosed={() => closeModal(PENDING_REQUIRE_FIELD_MODAL_ID)}
     />
   );
 };

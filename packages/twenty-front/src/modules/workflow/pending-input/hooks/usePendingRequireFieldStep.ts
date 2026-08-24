@@ -1,8 +1,8 @@
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
+import { useListenToObjectRecordOperationBrowserEvent } from '@/browser-event/hooks/useListenToObjectRecordOperationBrowserEvent';
 import { useFindManyRecords } from '@/object-record/hooks/useFindManyRecords';
 import { useListenToEventsForQuery } from '@/sse-db-event/hooks/useListenToEventsForQuery';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
-import { dismissedPendingRequireFieldRunIdsState } from '@/workflow/pending-input/states/dismissedPendingRequireFieldRunIdsState';
 import {
   findPendingRequireFieldStep,
   type PendingRequireFieldStep,
@@ -10,6 +10,7 @@ import {
 import { useMemo } from 'react';
 import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
+import { useDebouncedCallback } from 'use-debounce';
 
 const PENDING_REQUIRE_FIELD_QUERY_ID = 'pending-require-field-runs';
 
@@ -23,7 +24,14 @@ const RUNNING_WORKFLOW_RUNS_FILTER = {
 const RECORD_GQL_FIELDS = {
   id: true,
   status: true,
-  createdBy: true,
+  // createdBy is a composite ACTOR field: it needs its subfields spelled out.
+  // Selecting it with `true` produces a selection-less composite and the whole
+  // query fails, which would leave this watcher silently seeing no runs.
+  createdBy: {
+    source: true,
+    workspaceMemberId: true,
+    name: true,
+  },
   state: true,
 };
 
@@ -39,27 +47,45 @@ export const usePendingRequireFieldStep = (): {
 } => {
   const currentWorkspaceMember = useAtomStateValue(currentWorkspaceMemberState);
 
-  const dismissedRunIds = useAtomStateValue(
-    dismissedPendingRequireFieldRunIdsState,
-  );
+  const isEnabled = isDefined(currentWorkspaceMember);
 
-  const { records: workflowRuns } = useFindManyRecords({
+  const {
+    records: workflowRuns,
+    refetch,
+    objectMetadataItem,
+  } = useFindManyRecords({
     objectNameSingular: CoreObjectNameSingular.WorkflowRun,
     filter: RUNNING_WORKFLOW_RUNS_FILTER,
     recordGqlFields: RECORD_GQL_FIELDS,
     limit: RUNNING_WORKFLOW_RUNS_LIMIT,
-    skip: !isDefined(currentWorkspaceMember),
+    skip: !isEnabled,
   });
 
-  // Keeps the list live, so the prompt shows up as soon as the run parks
-  // instead of on the next page load.
+  // Keeps the underlying records live.
   useListenToEventsForQuery({
     queryId: PENDING_REQUIRE_FIELD_QUERY_ID,
     operationSignature: {
       objectNameSingular: CoreObjectNameSingular.WorkflowRun,
       variables: { filter: RUNNING_WORKFLOW_RUNS_FILTER },
     },
-    skip: !isDefined(currentWorkspaceMember),
+    skip: !isEnabled,
+  });
+
+  // A run only enters this list once it starts, so a cache update alone is not
+  // enough -- a run that did not match the filter when we fetched would never
+  // appear. Refetching on any workflowRun event covers that. Debounced because
+  // a single run emits several events in quick succession as it progresses.
+  const refetchPendingRuns = useDebouncedCallback(() => {
+    if (!isEnabled) {
+      return;
+    }
+
+    refetch();
+  }, 300);
+
+  useListenToObjectRecordOperationBrowserEvent({
+    objectMetadataItemId: objectMetadataItem?.id,
+    onObjectRecordOperationBrowserEvent: refetchPendingRuns,
   });
 
   const pendingStep = useMemo(() => {
@@ -67,13 +93,7 @@ export const usePendingRequireFieldStep = (): {
       return undefined;
     }
 
-    const dismissedRunIdsSet = new Set(dismissedRunIds);
-
     for (const workflowRun of workflowRuns) {
-      if (dismissedRunIdsSet.has(workflowRun.id)) {
-        continue;
-      }
-
       if (
         workflowRun.createdBy?.workspaceMemberId !== currentWorkspaceMember.id
       ) {
@@ -88,7 +108,7 @@ export const usePendingRequireFieldStep = (): {
     }
 
     return undefined;
-  }, [workflowRuns, currentWorkspaceMember, dismissedRunIds]);
+  }, [workflowRuns, currentWorkspaceMember]);
 
   return { pendingStep };
 };
