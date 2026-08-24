@@ -8,6 +8,10 @@ import { StepStatus, type WorkflowRunStepInfos } from 'twenty-shared/workflow';
 export type PendingRequireFieldStep = {
   workflowRunId: string;
   step: WorkflowRequireFieldAction;
+  // Id of the record that triggered the run. Read from the trigger payload
+  // because `settings.input.objectRecordId` holds an unresolved variable
+  // template such as {{trigger.properties.after.id}}, not a real id.
+  triggerRecordId: string | undefined;
 };
 
 type WorkflowRunLike = {
@@ -16,6 +20,20 @@ type WorkflowRunLike = {
     flow?: { steps?: WorkflowStep[] };
     stepInfos?: WorkflowRunStepInfos;
   } | null;
+};
+
+const getTriggerRecordId = (
+  stepInfos: WorkflowRunStepInfos,
+): string | undefined => {
+  const triggerResult = stepInfos['trigger']?.result;
+
+  if (!isDefined(triggerResult) || typeof triggerResult !== 'object') {
+    return undefined;
+  }
+
+  const recordId = (triggerResult as { recordId?: unknown }).recordId;
+
+  return typeof recordId === 'string' ? recordId : undefined;
 };
 
 /**
@@ -50,5 +68,6 @@ export const findPendingRequireFieldStep = (
   return {
     workflowRunId: workflowRun.id,
     step: pendingStep,
+    triggerRecordId: getTriggerRecordId(stepInfos),
   };
 };

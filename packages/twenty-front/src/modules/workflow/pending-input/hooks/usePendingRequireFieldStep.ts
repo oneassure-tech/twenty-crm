@@ -7,15 +7,20 @@ import {
   findPendingRequireFieldStep,
   type PendingRequireFieldStep,
 } from '@/workflow/pending-input/utils/findPendingRequireFieldStep';
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
-import { useDebouncedCallback } from 'use-debounce';
 
 const PENDING_REQUIRE_FIELD_QUERY_ID = 'pending-require-field-runs';
 
 // Runs waiting on a human are few, and only running ones can be waiting.
 const RUNNING_WORKFLOW_RUNS_LIMIT = 30;
+
+// A workflow run is created by a background job after the write returns, so
+// there is nothing to find at the moment the user acts. These control a short
+// burst of re-checks that covers the gap between the write and the run parking.
+const POLL_INTERVAL_IN_MS = 1_500;
+const POLL_DURATION_IN_MS = 12_000;
 
 const RUNNING_WORKFLOW_RUNS_FILTER = {
   status: { eq: 'RUNNING' },
@@ -35,6 +40,13 @@ const RECORD_GQL_FIELDS = {
   state: true,
 };
 
+const WRITE_OPERATION_TYPES = [
+  'update-one',
+  'update-many',
+  'create-one',
+  'create-many',
+] as const;
+
 /**
  * Watches for a REQUIRE_FIELD step waiting on the current user.
  *
@@ -49,11 +61,7 @@ export const usePendingRequireFieldStep = (): {
 
   const isEnabled = isDefined(currentWorkspaceMember);
 
-  const {
-    records: workflowRuns,
-    refetch,
-    objectMetadataItem,
-  } = useFindManyRecords({
+  const { records: workflowRuns, refetch } = useFindManyRecords({
     objectNameSingular: CoreObjectNameSingular.WorkflowRun,
     filter: RUNNING_WORKFLOW_RUNS_FILTER,
     recordGqlFields: RECORD_GQL_FIELDS,
@@ -61,7 +69,7 @@ export const usePendingRequireFieldStep = (): {
     skip: !isEnabled,
   });
 
-  // Keeps the underlying records live.
+  // Keeps already-loaded runs live.
   useListenToEventsForQuery({
     queryId: PENDING_REQUIRE_FIELD_QUERY_ID,
     operationSignature: {
@@ -71,22 +79,47 @@ export const usePendingRequireFieldStep = (): {
     skip: !isEnabled,
   });
 
-  // A run only enters this list once it starts, so a cache update alone is not
-  // enough -- a run that did not match the filter when we fetched would never
-  // appear. Refetching on any workflowRun event covers that. Debounced because
-  // a single run emits several events in quick succession as it progresses.
-  const refetchPendingRuns = useDebouncedCallback(() => {
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollDeadlineRef = useRef<number>(0);
+
+  const stopPolling = useCallback(() => {
+    if (isDefined(pollIntervalRef.current)) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  }, []);
+
+  // Any record the user writes might be the one a workflow is watching, and the
+  // matching run only appears a moment later. Rather than guess which object it
+  // was, re-check for a short window after every write.
+  const startPolling = useCallback(() => {
     if (!isEnabled) {
       return;
     }
 
-    refetch();
-  }, 300);
+    pollDeadlineRef.current = Date.now() + POLL_DURATION_IN_MS;
+
+    if (isDefined(pollIntervalRef.current)) {
+      return;
+    }
+
+    pollIntervalRef.current = setInterval(() => {
+      if (Date.now() > pollDeadlineRef.current) {
+        stopPolling();
+
+        return;
+      }
+
+      refetch();
+    }, POLL_INTERVAL_IN_MS);
+  }, [isEnabled, refetch, stopPolling]);
 
   useListenToObjectRecordOperationBrowserEvent({
-    objectMetadataItemId: objectMetadataItem?.id,
-    onObjectRecordOperationBrowserEvent: refetchPendingRuns,
+    operationTypes: [...WRITE_OPERATION_TYPES],
+    onObjectRecordOperationBrowserEvent: startPolling,
   });
+
+  useEffect(() => stopPolling, [stopPolling]);
 
   const pendingStep = useMemo(() => {
     if (!isDefined(currentWorkspaceMember)) {
@@ -109,6 +142,13 @@ export const usePendingRequireFieldStep = (): {
 
     return undefined;
   }, [workflowRuns, currentWorkspaceMember]);
+
+  // Nothing more to wait for once the prompt is up.
+  useEffect(() => {
+    if (isDefined(pendingStep)) {
+      stopPolling();
+    }
+  }, [pendingStep, stopPolling]);
 
   return { pendingStep };
 };

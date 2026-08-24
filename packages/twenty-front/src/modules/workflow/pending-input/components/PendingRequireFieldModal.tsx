@@ -30,11 +30,13 @@ const StyledButtonContainer = styled.div`
 type PendingRequireFieldModalProps = {
   pendingStep: PendingRequireFieldStep;
   onClosed: () => void;
+  onSubmitted: () => void;
 };
 
 export const PendingRequireFieldModal = ({
   pendingStep,
   onClosed,
+  onSubmitted,
 }: PendingRequireFieldModalProps) => {
   const { t } = useLingui();
   const { closeModal } = useModal();
@@ -81,7 +83,7 @@ export const PendingRequireFieldModal = ({
       });
 
       closeModal(PENDING_REQUIRE_FIELD_MODAL_ID);
-      onClosed();
+      onSubmitted();
     } finally {
       setIsSubmitting(false);
     }
