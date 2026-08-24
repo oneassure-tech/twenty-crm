@@ -13,6 +13,7 @@ import {
 } from 'src/modules/workflow/workflow-trigger/exceptions/workflow-trigger.exception';
 import { WorkflowTriggerType } from 'src/modules/workflow/workflow-trigger/types/workflow-trigger.type';
 import { assertFormStepIsValid } from 'src/modules/workflow/workflow-trigger/utils/assert-form-step-is-valid.util';
+import { assertRequireFieldStepIsValid } from 'src/modules/workflow/workflow-trigger/utils/assert-require-field-step-is-valid.util';
 
 export function assertVersionCanBeActivated(
   workflowVersion: WorkflowVersionWorkspaceEntity,
@@ -266,6 +267,9 @@ function assertStepIsValid(step: WorkflowAction) {
   switch (step.type) {
     case WorkflowActionType.FORM:
       assertFormStepIsValid(step.settings);
+      break;
+    case WorkflowActionType.REQUIRE_FIELD:
+      assertRequireFieldStepIsValid(step.settings);
       break;
     default:
       break;

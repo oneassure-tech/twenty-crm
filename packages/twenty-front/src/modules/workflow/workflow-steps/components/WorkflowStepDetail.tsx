@@ -16,6 +16,7 @@ import { WorkflowEditActionDelay } from '@/workflow/workflow-steps/workflow-acti
 import { WorkflowEditActionFilter } from '@/workflow/workflow-steps/workflow-actions/filter-action/components/WorkflowEditActionFilter';
 import { WorkflowEditActionFindRecords } from '@/workflow/workflow-steps/workflow-actions/find-records-action/components/WorkflowEditActionFindRecords';
 import { WorkflowEditActionFormBuilder } from '@/workflow/workflow-steps/workflow-actions/form-action/components/WorkflowEditActionFormBuilder';
+import { WorkflowEditActionRequireField } from '@/workflow/workflow-steps/workflow-actions/require-field-action/components/WorkflowEditActionRequireField';
 import { WorkflowEditActionHttpRequest } from '@/workflow/workflow-steps/workflow-actions/http-request-action/components/WorkflowEditActionHttpRequest';
 import { WorkflowEditActionIfElse } from '@/workflow/workflow-steps/workflow-actions/if-else-action/components/WorkflowEditActionIfElse';
 import { WorkflowEditActionIterator } from '@/workflow/workflow-steps/workflow-actions/iterator-action/components/WorkflowEditActionIterator';
@@ -210,6 +211,16 @@ export const WorkflowStepDetail = ({
           return (
             <WorkflowEditActionFormBuilder
               triggerType={trigger?.type}
+              key={stepId}
+              action={stepDefinition.definition}
+              actionOptions={props}
+            />
+          );
+        }
+
+        case 'REQUIRE_FIELD': {
+          return (
+            <WorkflowEditActionRequireField
               key={stepId}
               action={stepDefinition.definition}
               actionOptions={props}

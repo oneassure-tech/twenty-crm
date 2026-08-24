@@ -21,6 +21,7 @@ export const getActionIconColorOrThrow = (
     case 'PICK_RECORD':
       return themeCssVariables.font.color.tertiary;
     case 'FORM':
+    case 'REQUIRE_FIELD':
       return themeCssVariables.color.orange;
     case 'ITERATOR':
     case 'EMPTY':

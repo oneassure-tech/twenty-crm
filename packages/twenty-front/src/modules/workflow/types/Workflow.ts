@@ -21,6 +21,7 @@ import {
   type workflowLogicFunctionActionSchema,
   type workflowManualTriggerSchema,
   type workflowPickRecordActionSchema,
+  type workflowRequireFieldActionSchema,
   type workflowRunSchema,
   type workflowRunStateSchema,
   type workflowRunStatusSchema,
@@ -67,6 +68,9 @@ export type WorkflowPickRecordAction = z.infer<
 export type WorkflowDelayAction = z.infer<typeof workflowDelayActionSchema>;
 export type WorkflowFilterAction = z.infer<typeof workflowFilterActionSchema>;
 export type WorkflowFormAction = z.infer<typeof workflowFormActionSchema>;
+export type WorkflowRequireFieldAction = z.infer<
+  typeof workflowRequireFieldActionSchema
+>;
 export type WorkflowIfElseAction = z.infer<typeof workflowIfElseActionSchema>;
 export type WorkflowHttpRequestAction = z.infer<
   typeof workflowHttpRequestActionSchema
@@ -92,6 +96,7 @@ export type WorkflowAction =
   | WorkflowFilterAction
   | WorkflowIfElseAction
   | WorkflowFormAction
+  | WorkflowRequireFieldAction
   | WorkflowHttpRequestAction
   | WorkflowAiAgentAction
   | WorkflowIteratorAction
