@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { msg } from '@lingui/core/macro';
 import { type ActorMetadata } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
-import { StepStatus } from 'twenty-shared/workflow';
+import { hasRequireFieldAnswer, StepStatus } from 'twenty-shared/workflow';
 
 import { BillingUsageService } from 'src/engine/core-modules/billing/services/billing-usage.service';
 import { InjectMessageQueue } from 'src/engine/core-modules/message-queue/decorators/message-queue.decorator';
@@ -21,6 +21,8 @@ import { workflowHasRunningSteps } from 'src/modules/workflow/common/utils/workf
 import { WorkflowCommonWorkspaceService } from 'src/modules/workflow/common/workspace-services/workflow-common.workspace-service';
 import { WorkflowVersionStepOperationsWorkspaceService } from 'src/modules/workflow/workflow-builder/workflow-version-step/workflow-version-step-operations.workspace-service';
 import { isWorkflowFormAction } from 'src/modules/workflow/workflow-executor/workflow-actions/form/guards/is-workflow-form-action.guard';
+import { isWorkflowRequireFieldAction } from 'src/modules/workflow/workflow-executor/workflow-actions/require-field/guards/is-workflow-require-field-action.guard';
+import { type WorkflowRequireFieldAction } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action.type';
 import {
   WorkflowRunException,
   WorkflowRunExceptionCode,
@@ -161,6 +163,20 @@ export class WorkflowRunnerWorkspaceService {
       );
     }
 
+    // REQUIRE_FIELD reuses this mutation: both are human-input steps that park
+    // a run until someone answers. Their resume paths differ -- see below.
+    if (isWorkflowRequireFieldAction(step)) {
+      await this.resumeRequireFieldStep({
+        workspaceId,
+        workflowRunId,
+        stepId,
+        step,
+        stepStatus: workflowRun.state?.stepInfos?.[stepId]?.status,
+      });
+
+      return;
+    }
+
     if (!isWorkflowFormAction(step)) {
       throw new WorkflowVersionStepException(
         'Step is not a form',
@@ -195,6 +211,74 @@ export class WorkflowRunnerWorkspaceService {
       workflowRunId,
       lastExecutedStepId: stepId,
     });
+  }
+
+  /**
+   * Unlike a form, a REQUIRE_FIELD step is not finished when the answer arrives
+   * -- it still has to write that answer to the record. So instead of marking
+   * it SUCCESS and moving on, we re-run the step itself: the answer is already
+   * on the step definition (persisted by updateWorkflowRunStep), so the second
+   * pass takes the write branch.
+   *
+   * Resetting to NOT_STARTED is required, not cosmetic. `shouldExecuteStep`
+   * skips any step where `stepHasBeenStarted` is true, and PENDING counts as
+   * started -- without this reset the retry is a silent no-op.
+   */
+  private async resumeRequireFieldStep({
+    workspaceId,
+    workflowRunId,
+    stepId,
+    step,
+    stepStatus,
+  }: {
+    workspaceId: string;
+    workflowRunId: string;
+    stepId: string;
+    step: WorkflowRequireFieldAction;
+    stepStatus: StepStatus | undefined;
+  }) {
+    // Only a step that is actually waiting may be resumed. Without this, a
+    // repeated submit would re-run a finished step and write the record again.
+    if (stepStatus !== StepStatus.PENDING) {
+      throw new WorkflowVersionStepException(
+        'Step is not waiting for an answer',
+        WorkflowVersionStepExceptionCode.INVALID_REQUEST,
+        {
+          userFriendlyMessage: msg`This step is no longer waiting for an answer.`,
+        },
+      );
+    }
+
+    // The answer is read from the step definition on re-execution, so refuse
+    // early if it was never persisted -- otherwise the step would silently
+    // park itself again and the user would see nothing happen.
+    if (!hasRequireFieldAnswer(step.settings.input.value)) {
+      throw new WorkflowVersionStepException(
+        'No answer provided for required field step',
+        WorkflowVersionStepExceptionCode.INVALID_REQUEST,
+        {
+          userFriendlyMessage: msg`Please fill this field before submitting.`,
+        },
+      );
+    }
+
+    await this.workflowRunWorkspaceService.updateWorkflowRunStepInfo({
+      stepId,
+      stepInfo: {
+        status: StepStatus.NOT_STARTED,
+      },
+      workspaceId,
+      workflowRunId,
+    });
+
+    await this.messageQueueService.add<RunWorkflowJobData>(
+      RunWorkflowJob.name,
+      {
+        workspaceId,
+        workflowRunId,
+        stepIdsToRetry: [stepId],
+      },
+    );
   }
 
   async stopWorkflowRun(workspaceId: string, workflowRunId: string) {

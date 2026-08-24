@@ -21,6 +21,20 @@ export type WorkflowTriggerJobData = {
   payload: object;
 };
 
+// Database events carry the workspace member who caused them. We keep that on
+// the run so a step which has to ask a human knows who to ask. Events with no
+// member (cron, API keys, imports) simply leave it null and prompt nobody.
+const getInitiatorWorkspaceMemberId = (payload: object): string | null => {
+  if (!isDefined(payload) || !('workspaceMemberId' in payload)) {
+    return null;
+  }
+
+  const workspaceMemberId = (payload as { workspaceMemberId?: unknown })
+    .workspaceMemberId;
+
+  return typeof workspaceMemberId === 'string' ? workspaceMemberId : null;
+};
+
 const DEFAULT_WORKFLOW_NAME = 'Workflow';
 
 @Processor({ queueName: MessageQueue.workflowQueue, scope: Scope.REQUEST })
@@ -92,7 +106,7 @@ export class WorkflowTriggerJob {
               ? workflow.name
               : DEFAULT_WORKFLOW_NAME,
           context: {},
-          workspaceMemberId: null,
+          workspaceMemberId: getInitiatorWorkspaceMemberId(data.payload),
         },
       });
     }, authContext);

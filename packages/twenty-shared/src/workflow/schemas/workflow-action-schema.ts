@@ -14,6 +14,7 @@ import { workflowIfElseActionSchema } from './if-else-action-schema';
 import { workflowIteratorActionSchema } from './iterator-action-schema';
 import { workflowLogicFunctionActionSchema } from './logic-function-action-schema';
 import { workflowPickRecordActionSchema } from './pick-record-action-schema';
+import { workflowRequireFieldActionSchema } from './require-field-action-schema';
 import { workflowSendEmailActionSchema } from './send-email-action-schema';
 import { workflowUpdateRecordActionSchema } from './update-record-action-schema';
 import { workflowUpsertRecordActionSchema } from './upsert-record-action-schema';
@@ -32,6 +33,7 @@ export const workflowActionSchema = z.discriminatedUnion('type', [
   workflowFindRecordsActionSchema,
   workflowPickRecordActionSchema,
   workflowFormActionSchema,
+  workflowRequireFieldActionSchema,
   workflowHttpRequestActionSchema,
   workflowAiAgentActionSchema,
   workflowFilterActionSchema,

@@ -502,6 +502,28 @@ export class WorkflowVersionStepOperationsWorkspaceService {
           },
         };
       }
+      case WorkflowActionType.REQUIRE_FIELD: {
+        return {
+          builtStep: {
+            ...baseStep,
+            name: 'Required Field',
+            type: WorkflowActionType.REQUIRE_FIELD,
+            settings: {
+              ...BASE_STEP_DEFINITION,
+              input: {
+                objectName: '',
+                // Defaults to the record that triggered the run, which is the
+                // case this action exists for. Editable in the step panel.
+                objectRecordId: '{{trigger.object.id}}',
+                fieldName: '',
+                fieldMetadataId: '',
+                label: '',
+                type: FieldMetadataType.TEXT,
+              },
+            },
+          },
+        };
+      }
       case WorkflowActionType.FILTER: {
         return {
           builtStep: {

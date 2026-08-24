@@ -11,6 +11,7 @@ import { type WorkflowIfElseActionSettings } from 'src/modules/workflow/workflow
 import { type WorkflowIteratorActionSettings } from 'src/modules/workflow/workflow-executor/workflow-actions/iterator/types/workflow-iterator-action-settings.type';
 import { type WorkflowLogicFunctionActionSettings } from 'src/modules/workflow/workflow-executor/workflow-actions/logic-function/types/workflow-logic-function-action-settings.type';
 import { type WorkflowSendEmailActionSettings } from 'src/modules/workflow/workflow-executor/workflow-actions/mail-sender/types/workflow-send-email-action-settings.type';
+import { type WorkflowRequireFieldActionSettings } from 'src/modules/workflow/workflow-executor/workflow-actions/require-field/types/workflow-require-field-action-settings.type';
 import {
   type WorkflowCreateRecordActionSettings,
   type WorkflowDeleteRecordActionSettings,
@@ -94,6 +95,11 @@ export type WorkflowFormAction = BaseWorkflowAction & {
   settings: WorkflowFormActionSettings;
 };
 
+export type WorkflowRequireFieldAction = BaseWorkflowAction & {
+  type: WorkflowActionType.REQUIRE_FIELD;
+  settings: WorkflowRequireFieldActionSettings;
+};
+
 export type WorkflowFilterAction = BaseWorkflowAction & {
   type: WorkflowActionType.FILTER;
   settings: WorkflowFilterActionSettings;
@@ -141,6 +147,7 @@ export type WorkflowAction =
   | WorkflowFindRecordsAction
   | WorkflowPickRecordAction
   | WorkflowFormAction
+  | WorkflowRequireFieldAction
   | WorkflowFilterAction
   | WorkflowIfElseAction
   | WorkflowHttpRequestAction

@@ -17,6 +17,7 @@ import { WorkflowEditActionDelay } from '@/workflow/workflow-steps/workflow-acti
 import { WorkflowEditActionFilter } from '@/workflow/workflow-steps/workflow-actions/filter-action/components/WorkflowEditActionFilter';
 import { WorkflowEditActionFindRecords } from '@/workflow/workflow-steps/workflow-actions/find-records-action/components/WorkflowEditActionFindRecords';
 import { WorkflowEditActionFormFiller } from '@/workflow/workflow-steps/workflow-actions/form-action/components/WorkflowEditActionFormFiller';
+import { WorkflowEditActionRequireFieldFiller } from '@/workflow/workflow-steps/workflow-actions/require-field-action/components/WorkflowEditActionRequireFieldFiller';
 import { WorkflowEditActionHttpRequest } from '@/workflow/workflow-steps/workflow-actions/http-request-action/components/WorkflowEditActionHttpRequest';
 import { WorkflowEditActionIfElse } from '@/workflow/workflow-steps/workflow-actions/if-else-action/components/WorkflowEditActionIfElse';
 import { WorkflowEditActionIterator } from '@/workflow/workflow-steps/workflow-actions/iterator-action/components/WorkflowEditActionIterator';
@@ -227,6 +228,20 @@ export const WorkflowRunStepNodeDetail = ({
         case 'FORM': {
           return (
             <WorkflowEditActionFormFiller
+              key={stepId}
+              action={stepDefinition.definition}
+              actionOptions={{
+                readonly:
+                  stepExecutionStatus !== 'PENDING' &&
+                  stepExecutionStatus !== 'RUNNING',
+              }}
+            />
+          );
+        }
+
+        case 'REQUIRE_FIELD': {
+          return (
+            <WorkflowEditActionRequireFieldFiller
               key={stepId}
               action={stepDefinition.definition}
               actionOptions={{
