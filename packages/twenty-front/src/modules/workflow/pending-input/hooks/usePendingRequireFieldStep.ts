@@ -3,6 +3,7 @@ import { useListenToObjectRecordOperationBrowserEvent } from '@/browser-event/ho
 import { useFindManyRecords } from '@/object-record/hooks/useFindManyRecords';
 import { useListenToEventsForQuery } from '@/sse-db-event/hooks/useListenToEventsForQuery';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useRequireFieldWatchedObjectNames } from '@/workflow/pending-input/hooks/useRequireFieldWatchedObjectNames';
 import {
   findPendingRequireFieldStep,
   type PendingRequireFieldStep,
@@ -50,6 +51,9 @@ const WRITE_OPERATION_TYPES = [
 /**
  * Watches for a REQUIRE_FIELD step waiting on the current user.
  *
+ * Inert unless a published workflow can actually ask for a required field, and
+ * even then it only reacts to writes on the objects those workflows watch.
+ *
  * The status filter runs server-side; ownership is matched here rather than in
  * the filter because `createdBy.workspaceMemberId` is hidden from generated
  * input types. The set is small enough that this costs nothing.
@@ -59,7 +63,12 @@ export const usePendingRequireFieldStep = (): {
 } => {
   const currentWorkspaceMember = useAtomStateValue(currentWorkspaceMemberState);
 
-  const isEnabled = isDefined(currentWorkspaceMember);
+  const { watchedObjectNameSingulars } = useRequireFieldWatchedObjectNames();
+
+  // Nothing to watch for unless a published workflow can actually ask for a
+  // required field. Keeps this completely idle for everyone else.
+  const isEnabled =
+    isDefined(currentWorkspaceMember) && watchedObjectNameSingulars.size > 0;
 
   const { records: workflowRuns, refetch } = useFindManyRecords({
     objectNameSingular: CoreObjectNameSingular.WorkflowRun,
@@ -89,34 +98,38 @@ export const usePendingRequireFieldStep = (): {
     }
   }, []);
 
-  // Any record the user writes might be the one a workflow is watching, and the
-  // matching run only appears a moment later. Rather than guess which object it
-  // was, re-check for a short window after every write.
-  const startPolling = useCallback(() => {
-    if (!isEnabled) {
-      return;
-    }
-
-    pollDeadlineRef.current = Date.now() + POLL_DURATION_IN_MS;
-
-    if (isDefined(pollIntervalRef.current)) {
-      return;
-    }
-
-    pollIntervalRef.current = setInterval(() => {
-      if (Date.now() > pollDeadlineRef.current) {
-        stopPolling();
-
+  // A write to a watched object may have just started a run, and that run only
+  // appears a moment later. Re-check for a short window; writes to any other
+  // object are ignored so this stays quiet during normal use.
+  const startPolling = useCallback(
+    (objectNameSingular: string) => {
+      if (!isEnabled || !watchedObjectNameSingulars.has(objectNameSingular)) {
         return;
       }
 
-      refetch();
-    }, POLL_INTERVAL_IN_MS);
-  }, [isEnabled, refetch, stopPolling]);
+      pollDeadlineRef.current = Date.now() + POLL_DURATION_IN_MS;
+
+      if (isDefined(pollIntervalRef.current)) {
+        return;
+      }
+
+      pollIntervalRef.current = setInterval(() => {
+        if (Date.now() > pollDeadlineRef.current) {
+          stopPolling();
+
+          return;
+        }
+
+        refetch();
+      }, POLL_INTERVAL_IN_MS);
+    },
+    [isEnabled, watchedObjectNameSingulars, refetch, stopPolling],
+  );
 
   useListenToObjectRecordOperationBrowserEvent({
     operationTypes: [...WRITE_OPERATION_TYPES],
-    onObjectRecordOperationBrowserEvent: startPolling,
+    onObjectRecordOperationBrowserEvent: (detail) =>
+      startPolling(detail.objectMetadataItem.nameSingular),
   });
 
   useEffect(() => stopPolling, [stopPolling]);
