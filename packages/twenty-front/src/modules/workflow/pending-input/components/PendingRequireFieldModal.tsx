@@ -63,8 +63,9 @@ export const PendingRequireFieldModal = ({
     setIsSubmitting(true);
 
     try {
-      // The answer must land on the run's step definition before submitting:
-      // the step is re-executed and reads it back from there.
+      // Must happen before submitting: the server re-executes this step and
+      // reads the answer back off the step definition, so submitting first
+      // would re-run it with nothing to write.
       await updateWorkflowRunStep({
         workflowRunId,
         step: {

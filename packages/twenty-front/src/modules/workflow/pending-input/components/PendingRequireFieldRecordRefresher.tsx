@@ -14,13 +14,15 @@ type PendingRequireFieldRecordRefresherProps = {
   onRefreshed: () => void;
 };
 
-/**
- * Pulls the freshly written record back into the cache after a required field
- * is submitted, so the value shows up without a manual refresh.
- *
- * Mounted only while a refresh is outstanding, and keyed on the record, so the
- * object name stays fixed for its whole lifetime.
- */
+// Pulls the freshly written record back into the cache after a required field
+// is submitted.
+//
+// Added because submitting only queues the write: a background worker performs
+// it a second or two later, so the page was still showing the old, empty value
+// and users had to refresh by hand to see their answer.
+//
+// Lives outside the modal on purpose. The modal unmounts the instant you
+// submit, which would kill these re-reads before the first one ran.
 export const PendingRequireFieldRecordRefresher = ({
   objectNameSingular,
   recordId,
@@ -34,8 +36,9 @@ export const PendingRequireFieldRecordRefresher = ({
 
   const { upsertRecordsInStore } = useUpsertRecordsInStore();
 
-  // Held in refs so the polling effect depends only on the record it is
-  // watching, not on callbacks that change identity every render.
+  // Held in refs so the effect below depends only on the record being watched.
+  // These callbacks get a new identity every render, and listing them as
+  // dependencies would restart the re-reads constantly.
   const findOneRecordRef = useRef(findOneRecord);
   const upsertRecordsInStoreRef = useRef(upsertRecordsInStore);
   const onRefreshedRef = useRef(onRefreshed);
@@ -78,6 +81,8 @@ export const PendingRequireFieldRecordRefresher = ({
       );
     }
 
+    // Navigating away mid-wait would otherwise leave timeouts queued against an
+    // unmounted component.
     return () => {
       isDone = true;
       clearPendingTimeouts();

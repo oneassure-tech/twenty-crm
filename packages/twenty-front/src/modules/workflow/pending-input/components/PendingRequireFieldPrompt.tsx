@@ -14,17 +14,14 @@ type SubmittedTarget = {
   fieldName: string;
 };
 
-/**
- * Prompts the current user when a workflow they triggered is parked waiting for
- * them to fill a required field.
- *
- * Mounted once for the whole app so the prompt reaches them wherever they are,
- * rather than only inside the workflow run side panel.
- *
- * There is no local "dismissed" list: the prompt disappears only because the
- * run stopped waiting -- either it was answered, or it was discarded, which
- * stops the run outright. That is what keeps it on screen until dealt with.
- */
+// Prompts the current user when a workflow they triggered is parked waiting for
+// them to fill a required field. Mounted once for the whole app so the prompt
+// reaches them wherever they are, not just in the workflow run side panel.
+//
+// An earlier version kept a local list of dismissed runs. That was removed: it
+// only hid the prompt in this tab, so a reload brought it straight back. Now
+// the prompt disappears solely because the run stopped waiting, which means
+// either it was answered or Discard stopped the run outright.
 export const PendingRequireFieldPrompt = () => {
   const { pendingStep } = usePendingRequireFieldStep();
   const { openModal, closeModal } = useModal();
@@ -52,6 +49,9 @@ export const PendingRequireFieldPrompt = () => {
           onSubmitted={() => {
             closeModal(PENDING_REQUIRE_FIELD_MODAL_ID);
 
+            // settings.input.objectRecordId holds an unresolved variable
+            // template, so the real id has to come from the trigger payload.
+            // Without it there is no record to refresh.
             if (!isDefined(pendingStep.triggerRecordId)) {
               return;
             }

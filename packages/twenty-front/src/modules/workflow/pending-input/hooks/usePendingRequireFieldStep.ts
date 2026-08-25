@@ -48,16 +48,9 @@ const WRITE_OPERATION_TYPES = [
   'create-many',
 ] as const;
 
-/**
- * Watches for a REQUIRE_FIELD step waiting on the current user.
- *
- * Inert unless a published workflow can actually ask for a required field, and
- * even then it only reacts to writes on the objects those workflows watch.
- *
- * The status filter runs server-side; ownership is matched here rather than in
- * the filter because `createdBy.workspaceMemberId` is hidden from generated
- * input types. The set is small enough that this costs nothing.
- */
+// Finds a REQUIRE_FIELD step that is parked waiting on the current user, so the
+// app can prompt them wherever they are instead of making them dig through
+// Workflow Runs to find it.
 export const usePendingRequireFieldStep = (): {
   pendingStep: PendingRequireFieldStep | undefined;
 } => {
@@ -78,7 +71,9 @@ export const usePendingRequireFieldStep = (): {
     skip: !isEnabled,
   });
 
-  // Keeps already-loaded runs live.
+  // Live updates for runs already in the list. Not sufficient on its own: a run
+  // created after this query ran was never in the list to be updated, which is
+  // why the polling below exists as well.
   useListenToEventsForQuery({
     queryId: PENDING_REQUIRE_FIELD_QUERY_ID,
     operationSignature: {
@@ -91,6 +86,9 @@ export const usePendingRequireFieldStep = (): {
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollDeadlineRef = useRef<number>(0);
 
+  // Polling is deliberately time-boxed rather than continuous. It only has to
+  // survive the gap between the user's write and the run parking, so it winds
+  // itself down instead of running for the life of the session.
   const stopPolling = useCallback(() => {
     if (isDefined(pollIntervalRef.current)) {
       clearInterval(pollIntervalRef.current);
@@ -107,6 +105,8 @@ export const usePendingRequireFieldStep = (): {
         return;
       }
 
+      // Pushing the deadline out on every write means rapid edits extend the
+      // window rather than each starting a competing interval.
       pollDeadlineRef.current = Date.now() + POLL_DURATION_IN_MS;
 
       if (isDefined(pollIntervalRef.current)) {
@@ -132,6 +132,7 @@ export const usePendingRequireFieldStep = (): {
       startPolling(detail.objectMetadataItem.nameSingular),
   });
 
+  // Unmounting mid-window would otherwise leave the interval running.
   useEffect(() => stopPolling, [stopPolling]);
 
   const pendingStep = useMemo(() => {
@@ -140,6 +141,9 @@ export const usePendingRequireFieldStep = (): {
     }
 
     for (const workflowRun of workflowRuns) {
+      // Only prompt the person who caused the run. Ownership is matched here
+      // rather than in the query filter because createdBy.workspaceMemberId is
+      // hidden from the generated filter input types.
       if (
         workflowRun.createdBy?.workspaceMemberId !== currentWorkspaceMember.id
       ) {
@@ -156,7 +160,7 @@ export const usePendingRequireFieldStep = (): {
     return undefined;
   }, [workflowRuns, currentWorkspaceMember]);
 
-  // Nothing more to wait for once the prompt is up.
+  // The prompt is up, so the thing polling was waiting for has arrived.
   useEffect(() => {
     if (isDefined(pendingStep)) {
       stopPolling();

@@ -15,12 +15,10 @@ type WorkflowRequireFieldInputProps = {
   onError?: (error: string | undefined) => void;
 };
 
-/**
- * The single input a person fills for a REQUIRE_FIELD step.
- *
- * Kept separate from the filler so the side panel and the prompt modal render
- * exactly the same control -- the two must not drift.
- */
+// The single input a person fills for a REQUIRE_FIELD step.
+//
+// Kept separate from the filler so the side panel and the prompt modal render
+// exactly the same control -- the two must not drift.
 export const WorkflowRequireFieldInput = ({
   input,
   readonly,

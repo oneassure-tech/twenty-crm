@@ -36,11 +36,8 @@ const getTriggerRecordId = (
   return typeof recordId === 'string' ? recordId : undefined;
 };
 
-/**
- * Returns the first REQUIRE_FIELD step of a run that is parked waiting for an
- * answer, or undefined. A run can only ever wait on one at a time because a
- * pending step halts the branch it sits on.
- */
+// Returns the REQUIRE_FIELD step a run is parked on, if any. Only ever one at a
+// time, because a pending step halts the branch it sits on.
 export const findPendingRequireFieldStep = (
   workflowRun: WorkflowRunLike | undefined | null,
 ): PendingRequireFieldStep | undefined => {

@@ -16,7 +16,8 @@ const RECORD_GQL_FIELDS = {
   steps: true,
 };
 
-// e.g. "lead.updated" -> "lead"
+// Trigger event names look like "lead.updated"; only the object part matters
+// for deciding whether a given write is worth reacting to.
 const getTriggerObjectNameSingular = (
   trigger: unknown,
 ): string | undefined => {
@@ -38,15 +39,13 @@ const getTriggerObjectNameSingular = (
     : undefined;
 };
 
-/**
- * Which objects, if any, currently have a published workflow that can ask for a
- * required field.
- *
- * Exists so the pending-input watcher stays completely inert in workspaces that
- * do not use this feature: with no such workflow it never queries runs and
- * never polls, and even when one exists it only reacts to writes on the objects
- * those workflows actually watch.
- */
+// Which objects, if any, currently have a published workflow that can ask for a
+// required field.
+//
+// Added to stop the watcher costing anything for people who do not use this
+// feature. Without it, every record write anywhere in the app kicked off a
+// burst of run queries, even in a workspace with no such workflow at all.
+// An empty result here switches the whole watcher off.
 export const useRequireFieldWatchedObjectNames = (): {
   watchedObjectNameSingulars: Set<string>;
 } => {
