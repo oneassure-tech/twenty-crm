@@ -1,15 +1,22 @@
 import { FormFieldInput } from '@/object-record/record-field/ui/components/FormFieldInput';
 import { type FieldDefinition } from '@/object-record/record-field/ui/types/FieldDefinition';
 import { type FieldMetadata } from '@/object-record/record-field/ui/types/FieldMetadata';
-import { type WorkflowRequireFieldAction } from '@/workflow/types/Workflow';
 import { WorkflowFormFieldInput } from '@/workflow/workflow-steps/workflow-actions/components/WorkflowFormFieldInput';
-import { FieldMetadataType } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 
-type RequireFieldInput = WorkflowRequireFieldAction['settings']['input'];
+// Only what is needed to render the control. Kept narrower than the step
+// settings so the workflow builder and the standalone prompt -- which gets its
+// data from a DTO, not a step definition -- can share this component.
+type WorkflowRequireFieldInputValue = {
+  label: string;
+  placeholder?: string;
+  type: string;
+  fieldMetadataId: string;
+  value: unknown;
+};
 
 type WorkflowRequireFieldInputProps = {
-  input: RequireFieldInput;
+  input: WorkflowRequireFieldInputValue;
   readonly: boolean;
   onChange: (value: unknown) => void;
   onError?: (error: string | undefined) => void;
@@ -26,10 +33,7 @@ export const WorkflowRequireFieldInput = ({
   onError,
 }: WorkflowRequireFieldInputProps) => {
   // SELECT and MULTI_SELECT need the real field metadata to know their options.
-  if (
-    input.type === FieldMetadataType.SELECT ||
-    input.type === FieldMetadataType.MULTI_SELECT
-  ) {
+  if (input.type === 'SELECT' || input.type === 'MULTI_SELECT') {
     if (!isDefined(input.fieldMetadataId)) {
       return null;
     }
@@ -37,7 +41,7 @@ export const WorkflowRequireFieldInput = ({
     return (
       <WorkflowFormFieldInput
         fieldMetadataId={input.fieldMetadataId}
-        defaultValue={input.value}
+        defaultValue={input.value as never}
         readonly={readonly}
         onChange={onChange}
       />
@@ -48,14 +52,13 @@ export const WorkflowRequireFieldInput = ({
     <FormFieldInput
       field={{
         label: input.label,
-        // FieldDefinition's type comes from the generated GraphQL enum, which
-        // is a separate declaration from the twenty-shared one used in the
-        // schema. Same string values, so the bridge is safe.
-        type: input.type as unknown as FieldDefinition<FieldMetadata>['type'],
+        // Carried as a plain string across the DTO boundary; FieldDefinition
+        // wants the generated GraphQL enum. Same string values either way.
+        type: input.type as FieldDefinition<FieldMetadata>['type'],
         metadata: {} as FieldMetadata,
       }}
       onChange={onChange}
-      defaultValue={input.value}
+      defaultValue={input.value as never}
       readonly={readonly}
       placeholder={input.placeholder}
       onError={onError}
