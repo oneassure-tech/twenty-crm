@@ -20,15 +20,13 @@ import { findStepOrThrow } from 'src/modules/workflow/workflow-executor/utils/fi
 import { isWorkflowRequireFieldAction } from 'src/modules/workflow/workflow-executor/workflow-actions/require-field/guards/is-workflow-require-field-action.guard';
 import { type WorkflowRequireFieldActionInput } from 'src/modules/workflow/workflow-executor/workflow-actions/require-field/types/workflow-require-field-action-settings.type';
 
-/**
- * Asks a human to fill one field on one record, then writes the answer there.
- *
- * The step executes twice. On the first pass no answer exists yet, so it parks
- * the run with `pendingEvent`. Submitting an answer stores it on the step
- * definition and re-runs this same step (see `submitFormStep`), and the second
- * pass performs the write. That keeps the record update inside the action,
- * where UpdateRecordWorkflowAction also does it, and needs no engine change.
- */
+// Asks a human to fill one field on one record, then writes the answer there.
+//
+// The step executes twice. On the first pass no answer exists yet, so it parks
+// the run with pendingEvent. Submitting an answer stores it on the step
+// definition and re-runs this same step (see submitFormStep), and the second
+// pass performs the write. That keeps the record update inside the action,
+// where UpdateRecordWorkflowAction also does it, and needs no engine change.
 @Injectable()
 export class RequireFieldWorkflowAction implements WorkflowAction {
   constructor(
