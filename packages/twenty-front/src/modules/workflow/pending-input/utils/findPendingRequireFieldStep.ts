@@ -8,10 +8,6 @@ import { StepStatus, type WorkflowRunStepInfos } from 'twenty-shared/workflow';
 export type PendingRequireFieldStep = {
   workflowRunId: string;
   step: WorkflowRequireFieldAction;
-  // Id of the record that triggered the run. Read from the trigger payload
-  // because `settings.input.objectRecordId` holds an unresolved variable
-  // template such as {{trigger.properties.after.id}}, not a real id.
-  triggerRecordId: string | undefined;
 };
 
 type WorkflowRunLike = {
@@ -22,22 +18,11 @@ type WorkflowRunLike = {
   } | null;
 };
 
-const getTriggerRecordId = (
-  stepInfos: WorkflowRunStepInfos,
-): string | undefined => {
-  const triggerResult = stepInfos['trigger']?.result;
-
-  if (!isDefined(triggerResult) || typeof triggerResult !== 'object') {
-    return undefined;
-  }
-
-  const recordId = (triggerResult as { recordId?: unknown }).recordId;
-
-  return typeof recordId === 'string' ? recordId : undefined;
-};
-
-// Returns the REQUIRE_FIELD step a run is parked on, if any. Only ever one at a
-// time, because a pending step halts the branch it sits on.
+/**
+ * Returns the first REQUIRE_FIELD step of a run that is parked waiting for an
+ * answer, or undefined. A run can only ever wait on one at a time because a
+ * pending step halts the branch it sits on.
+ */
 export const findPendingRequireFieldStep = (
   workflowRun: WorkflowRunLike | undefined | null,
 ): PendingRequireFieldStep | undefined => {
@@ -65,6 +50,5 @@ export const findPendingRequireFieldStep = (
   return {
     workflowRunId: workflowRun.id,
     step: pendingStep,
-    triggerRecordId: getTriggerRecordId(stepInfos),
   };
 };
