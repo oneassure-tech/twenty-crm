@@ -24,4 +24,14 @@ export class SubmitUserPromptResultDTO {
     description: 'Id of the record the answer was written to',
   })
   recordId: string;
+
+  @Field(() => String, {
+    description: 'Name of the field the answer was written to',
+  })
+  fieldName: string;
+
+  @Field(() => String, {
+    description: 'The answer that was written',
+  })
+  answer: string;
 }

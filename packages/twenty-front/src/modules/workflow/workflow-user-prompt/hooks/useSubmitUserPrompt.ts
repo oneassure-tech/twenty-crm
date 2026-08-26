@@ -1,8 +1,10 @@
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
-import { useRefetchAggregateQueries } from '@/object-record/hooks/useRefetchAggregateQueries';
+import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
+import { modifyRecordFromCache } from '@/object-record/cache/utils/modifyRecordFromCache';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { SUBMIT_USER_PROMPT } from '@/workflow/workflow-user-prompt/graphql/mutations/submitUserPrompt';
 import { useMutation } from '@apollo/client/react';
-import { capitalize } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 
 export type SubmitUserPromptInput = {
   workflowRunId: string;
@@ -16,6 +18,8 @@ type SubmitUserPromptResult = {
   objectNameSingular: string;
   objectNamePlural: string;
   recordId: string;
+  fieldName: string;
+  answer: string;
 };
 
 type SubmitUserPromptMutationResult = {
@@ -24,7 +28,7 @@ type SubmitUserPromptMutationResult = {
 
 export const useSubmitUserPrompt = () => {
   const apolloCoreClient = useApolloCoreClient();
-  const { refetchAggregateQueries } = useRefetchAggregateQueries();
+  const objectMetadataItems = useAtomStateValue(objectMetadataItemsSelector);
 
   const [mutate, { loading }] = useMutation<
     SubmitUserPromptMutationResult,
@@ -41,21 +45,27 @@ export const useSubmitUserPrompt = () => {
       return false;
     }
 
-    // The answer was written server-side by the workflow, so nothing in the
-    // Apollo cache knows about it. Refreshing the record and list queries for
-    // the touched object is what lets the new value appear straight away -
-    // otherwise the user has to reload the page to see what they just saved.
-    await apolloCoreClient.refetchQueries({
-      include: [
-        `FindOne${capitalize(submitResult.objectNameSingular)}`,
-        `FindMany${capitalize(submitResult.objectNamePlural)}`,
-      ],
-    });
+    const objectMetadataItem = objectMetadataItems.find(
+      (item) => item.nameSingular === submitResult.objectNameSingular,
+    );
 
-    // Kanban column totals and any count chips are separate queries.
-    await refetchAggregateQueries({
-      objectMetadataNamePlural: submitResult.objectNamePlural,
-    });
+    // The answer was written server-side by the workflow, so nothing in the
+    // Apollo cache knows about it and the stale value would stay on screen
+    // until a reload. Writing the one field we changed straight into the
+    // cached record updates the record page, the table cell and the kanban
+    // card at once. We deliberately do NOT refetch by query name: that
+    // re-runs every active query sharing the name, including record pickers
+    // whose filters are momentarily empty, which the API rejects.
+    if (isDefined(objectMetadataItem)) {
+      modifyRecordFromCache({
+        objectMetadataItem,
+        cache: apolloCoreClient.cache,
+        recordId: submitResult.recordId,
+        fieldModifiers: {
+          [submitResult.fieldName]: () => submitResult.answer,
+        },
+      });
+    }
 
     return true;
   };
