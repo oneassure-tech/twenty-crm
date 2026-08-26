@@ -1,4 +1,3 @@
-import { useStopWorkflowRun } from '@/workflow/hooks/useStopWorkflowRun';
 import { useUpdateWorkflowRunStep } from '@/workflow/workflow-steps/hooks/useUpdateWorkflowRunStep';
 import { useSubmitFormStep } from '@/workflow/workflow-steps/workflow-actions/form-action/hooks/useSubmitFormStep';
 import { WorkflowRequireFieldInput } from '@/workflow/workflow-steps/workflow-actions/require-field-action/components/WorkflowRequireFieldInput';
@@ -29,18 +28,19 @@ const StyledButtonContainer = styled.div`
 
 type PendingRequireFieldModalProps = {
   pendingStep: PendingRequireFieldStep;
-  onClosed: () => void;
+  onDismiss: () => void;
+  onSubmitted: () => void;
 };
 
 export const PendingRequireFieldModal = ({
   pendingStep,
-  onClosed,
+  onDismiss,
+  onSubmitted,
 }: PendingRequireFieldModalProps) => {
   const { t } = useLingui();
   const { closeModal } = useModal();
   const { submitFormStep } = useSubmitFormStep();
   const { updateWorkflowRunStep } = useUpdateWorkflowRunStep();
-  const { stopWorkflowRun } = useStopWorkflowRun();
 
   const { workflowRunId, step } = pendingStep;
 
@@ -81,36 +81,23 @@ export const PendingRequireFieldModal = ({
       });
 
       closeModal(PENDING_REQUIRE_FIELD_MODAL_ID);
-      onClosed();
+      onSubmitted();
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Discarding abandons the whole run, not just this prompt. That is what makes
-  // "stays until you deal with it" workable: there is no way to shrug the modal
-  // off, so the only exits are answering or explicitly giving up.
-  const handleDiscard = async () => {
-    setIsSubmitting(true);
-
-    try {
-      await stopWorkflowRun(workflowRunId);
-
-      closeModal(PENDING_REQUIRE_FIELD_MODAL_ID);
-      onClosed();
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleDismiss = () => {
+    closeModal(PENDING_REQUIRE_FIELD_MODAL_ID);
+    onDismiss();
   };
 
   return (
     <ModalStatefulWrapper
       modalInstanceId={PENDING_REQUIRE_FIELD_MODAL_ID}
+      onClose={handleDismiss}
       onEnter={handleSubmit}
-      // Not closable, and Escape / click-outside are ignored: the prompt has to
-      // survive until it is answered or explicitly discarded.
-      isClosable={false}
-      shouldCloseModalOnClickOutsideOrEscape={false}
+      isClosable={true}
       padding="large"
       overlay="dark"
       dataGloballyPreventClickOutside
@@ -133,12 +120,10 @@ export const PendingRequireFieldModal = ({
       </StyledInputContainer>
       <StyledButtonContainer>
         <Button
-          onClick={handleDiscard}
+          onClick={handleDismiss}
           variant="secondary"
-          accent="danger"
-          title={t`Discard`}
-          disabled={isSubmitting}
-          dataTestId="pending-require-field-discard-button"
+          title={t`Later`}
+          dataTestId="pending-require-field-dismiss-button"
         />
         <Button
           onClick={handleSubmit}
