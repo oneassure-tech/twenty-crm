@@ -17,6 +17,7 @@ import { WorkflowEditActionDelay } from '@/workflow/workflow-steps/workflow-acti
 import { WorkflowEditActionFilter } from '@/workflow/workflow-steps/workflow-actions/filter-action/components/WorkflowEditActionFilter';
 import { WorkflowEditActionFindRecords } from '@/workflow/workflow-steps/workflow-actions/find-records-action/components/WorkflowEditActionFindRecords';
 import { WorkflowEditActionFormFiller } from '@/workflow/workflow-steps/workflow-actions/form-action/components/WorkflowEditActionFormFiller';
+import { WorkflowEditActionUserPromptFiller } from '@/workflow/workflow-steps/workflow-actions/user-prompt-action/components/WorkflowEditActionUserPromptFiller';
 import { WorkflowEditActionHttpRequest } from '@/workflow/workflow-steps/workflow-actions/http-request-action/components/WorkflowEditActionHttpRequest';
 import { WorkflowEditActionIfElse } from '@/workflow/workflow-steps/workflow-actions/if-else-action/components/WorkflowEditActionIfElse';
 import { WorkflowEditActionIterator } from '@/workflow/workflow-steps/workflow-actions/iterator-action/components/WorkflowEditActionIterator';
@@ -233,6 +234,18 @@ export const WorkflowRunStepNodeDetail = ({
                 readonly:
                   stepExecutionStatus !== 'PENDING' &&
                   stepExecutionStatus !== 'RUNNING',
+              }}
+            />
+          );
+        }
+
+        case 'USER_PROMPT': {
+          return (
+            <WorkflowEditActionUserPromptFiller
+              key={stepId}
+              action={stepDefinition.definition}
+              actionOptions={{
+                readonly: stepExecutionStatus !== 'PENDING',
               }}
             />
           );

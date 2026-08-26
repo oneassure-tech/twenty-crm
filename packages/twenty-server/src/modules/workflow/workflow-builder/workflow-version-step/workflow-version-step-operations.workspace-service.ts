@@ -502,6 +502,27 @@ export class WorkflowVersionStepOperationsWorkspaceService {
           },
         };
       }
+      case WorkflowActionType.USER_PROMPT: {
+        return {
+          builtStep: {
+            ...baseStep,
+            name: 'Ask User',
+            type: WorkflowActionType.USER_PROMPT,
+            settings: {
+              ...BASE_STEP_DEFINITION,
+              input: {
+                question: '',
+                options: [],
+                allowOtherOption: false,
+                otherOptionLabel: 'Other',
+                objectName: '',
+                objectRecordId: '{{trigger.recordId}}',
+                fieldName: '',
+              },
+            },
+          },
+        };
+      }
       case WorkflowActionType.FILTER: {
         return {
           builtStep: {

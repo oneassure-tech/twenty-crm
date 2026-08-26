@@ -19,6 +19,7 @@ import { IteratorActionModule } from 'src/modules/workflow/workflow-executor/wor
 import { LogicFunctionActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/logic-function/logic-function-action.module';
 import { MailSenderActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/mail-sender/mail-sender-action.module';
 import { RecordCRUDActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/record-crud-action.module';
+import { UserPromptActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/user-prompt/user-prompt-action.module';
 import { WorkflowExecutorWorkspaceService } from 'src/modules/workflow/workflow-executor/workspace-services/workflow-executor.workspace-service';
 import { WorkflowRunModule } from 'src/modules/workflow/workflow-runner/workflow-run/workflow-run.module';
 
@@ -31,6 +32,7 @@ import { WorkflowRunModule } from 'src/modules/workflow/workflow-runner/workflow
     DelayActionModule,
     RecordCRUDActionModule,
     FormActionModule,
+    UserPromptActionModule,
     BillingModule,
     WorkspaceCacheModule,
     FilterActionModule,
