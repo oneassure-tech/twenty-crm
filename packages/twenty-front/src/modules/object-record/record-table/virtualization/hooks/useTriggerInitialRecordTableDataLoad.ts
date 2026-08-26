@@ -43,7 +43,7 @@ export const useTriggerInitialRecordTableDataLoad = () => {
   const { recordLimit } = useRecordIndexContextOrThrow();
 
   const { findManyRecordsLazy } =
-    useRecordIndexTableLazyQuery(objectNameSingular, 'network-only');
+    useRecordIndexTableLazyQuery(objectNameSingular);
 
   const isInitializingVirtualTableDataLoadingCallbackState =
     useAtomComponentStateCallbackState(

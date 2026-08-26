@@ -168,10 +168,7 @@ export const computeStepOutputSchema = ({
     case 'UPDATE_RECORD':
     case 'DELETE_RECORD':
     case 'UPSERT_RECORD':
-    case 'PICK_RECORD':
-    // Writes the answer onto a record and outputs that record, so it exposes
-    // the same variables as the other record steps.
-    case 'REQUIRE_FIELD': {
+    case 'PICK_RECORD': {
       const objectName = step.settings?.input?.objectName;
 
       if (!isDefined(objectName)) {

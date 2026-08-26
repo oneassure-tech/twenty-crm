@@ -13,7 +13,6 @@ import { DelayActionModule } from 'src/modules/workflow/workflow-executor/workfl
 import { EmptyActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/empty/empty-action.module';
 import { FilterActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/filter/filter-action.module';
 import { FormActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/form/form-action.module';
-import { RequireFieldActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/require-field/require-field-action.module';
 import { HttpRequestActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/http-request/http-request-action.module';
 import { IfElseActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/if-else/if-else-action.module';
 import { IteratorActionModule } from 'src/modules/workflow/workflow-executor/workflow-actions/iterator/iterator-action.module';
@@ -32,7 +31,6 @@ import { WorkflowRunModule } from 'src/modules/workflow/workflow-runner/workflow
     DelayActionModule,
     RecordCRUDActionModule,
     FormActionModule,
-    RequireFieldActionModule,
     BillingModule,
     WorkspaceCacheModule,
     FilterActionModule,

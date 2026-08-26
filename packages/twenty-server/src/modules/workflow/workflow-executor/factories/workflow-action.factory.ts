@@ -20,7 +20,6 @@ import { LogicFunctionWorkflowAction } from 'src/modules/workflow/workflow-execu
 import { DraftEmailWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/mail-sender/draft-email.workflow-action';
 import { SendEmailWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/mail-sender/send-email.workflow-action';
 import { CreateRecordWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/create-record.workflow-action';
-import { RequireFieldWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/require-field/require-field.workflow-action';
 import { DeleteRecordWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/delete-record.workflow-action';
 import { FindRecordsWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/find-records.workflow-action';
 import { PickRecordWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/pick-record.workflow-action';
@@ -40,7 +39,6 @@ export class WorkflowActionFactory {
     private readonly findRecordsWorkflowAction: FindRecordsWorkflowAction,
     private readonly pickRecordWorkflowAction: PickRecordWorkflowAction,
     private readonly formWorkflowAction: FormWorkflowAction,
-    private readonly requireFieldWorkflowAction: RequireFieldWorkflowAction,
     private readonly filterWorkflowAction: FilterWorkflowAction,
     private readonly ifElseWorkflowAction: IfElseWorkflowAction,
     private readonly iteratorWorkflowAction: IteratorWorkflowAction,
@@ -79,8 +77,6 @@ export class WorkflowActionFactory {
         return this.pickRecordWorkflowAction;
       case WorkflowActionType.FORM:
         return this.formWorkflowAction;
-      case WorkflowActionType.REQUIRE_FIELD:
-        return this.requireFieldWorkflowAction;
       case WorkflowActionType.FILTER:
         return this.filterWorkflowAction;
       case WorkflowActionType.IF_ELSE:

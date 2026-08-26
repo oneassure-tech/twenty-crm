@@ -52,8 +52,7 @@ export const WorkflowDiagramStepNodeIcon = ({
             />
           );
         }
-        case 'FORM':
-        case 'REQUIRE_FIELD': {
+        case 'FORM': {
           return <Icon size={theme.icon.size.md} color={theme.color.orange} />;
         }
         case 'AI_AGENT': {

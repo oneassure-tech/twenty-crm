@@ -1,5 +1,4 @@
 import { AppErrorBoundary } from '@/error-handler/components/AppErrorBoundary';
-import { PendingRequireFieldPrompt } from '@/workflow/pending-input/components/PendingRequireFieldPrompt';
 import { AppFullScreenErrorFallback } from '@/error-handler/components/AppFullScreenErrorFallback';
 import { AppPageErrorFallback } from '@/error-handler/components/AppPageErrorFallback';
 import { FileUploadProvider } from '@/file-upload/components/FileUploadProvider';
@@ -87,7 +86,6 @@ export const DefaultLayout = () => {
             <StyledPageContainer>
               <PageDragDropProvider>
                 <KeyboardShortcutMenu />
-                <PendingRequireFieldPrompt />
                 {useShowFullScreen ? null : (
                   <StyledNavigationDrawerWrapper>
                     <AppNavigationDrawer />

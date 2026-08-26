@@ -29,14 +29,6 @@ const SUPPORTED_FORM_FIELD_TYPES = [
   FieldMetadataType.RICH_TEXT,
 ];
 
-const REQUIRE_FIELD_SUPPORTED_TYPES = [
-  FieldMetadataType.TEXT,
-  FieldMetadataType.NUMBER,
-  FieldMetadataType.DATE,
-  FieldMetadataType.SELECT,
-  FieldMetadataType.MULTI_SELECT,
-];
-
 export const shouldDisplayFormField = ({
   fieldMetadataItem,
   actionType,
@@ -60,15 +52,6 @@ export const shouldDisplayFormField = ({
     case 'UPDATE_RECORD':
       return (
         !isNotSupportedRelation &&
-        (fieldMetadataItem.isUIEditable ?? true) &&
-        !isHiddenSystemField(fieldMetadataItem) &&
-        fieldMetadataItem.isActive
-      );
-    // Deliberately narrower than UPDATE_RECORD: a person answers this inline in
-    // a modal, so only field types with a simple single-value input qualify.
-    case 'REQUIRE_FIELD':
-      return (
-        REQUIRE_FIELD_SUPPORTED_TYPES.includes(fieldMetadataItem.type) &&
         (fieldMetadataItem.isUIEditable ?? true) &&
         !isHiddenSystemField(fieldMetadataItem) &&
         fieldMetadataItem.isActive

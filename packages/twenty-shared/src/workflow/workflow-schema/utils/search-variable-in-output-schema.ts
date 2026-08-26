@@ -29,9 +29,6 @@ const RECORD_STEP_TYPES = [
   'DELETE_RECORD',
   'UPSERT_RECORD',
   'PICK_RECORD',
-  // REQUIRE_FIELD writes the answer onto a record and outputs that record,
-  // so it exposes the same variables as the other record steps.
-  'REQUIRE_FIELD',
 ];
 
 const isRecordOutputSchemaV2 = (

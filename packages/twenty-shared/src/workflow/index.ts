@@ -71,8 +71,6 @@ export {
   workflowPickRecordStrategySchema,
   workflowPickRecordActionSettingsSchema,
 } from './schemas/pick-record-action-settings-schema';
-export { workflowRequireFieldActionSchema } from './schemas/require-field-action-schema';
-export { workflowRequireFieldActionSettingsSchema } from './schemas/require-field-action-settings-schema';
 export { workflowSendEmailActionSchema } from './schemas/send-email-action-schema';
 export type { WorkflowEmailFiles } from './schemas/send-email-action-settings-schema';
 export {
@@ -128,7 +126,6 @@ export { canObjectBeManagedByAutomation } from './utils/canObjectBeManagedByAuto
 export { extractRawVariableNamePart } from './utils/extractRawVariableNameParts';
 export { getFunctionInputFromInputSchema } from './utils/getFunctionInputFromInputSchema';
 export { getWorkflowRunContext } from './utils/getWorkflowRunContext';
-export { hasRequireFieldAnswer } from './utils/hasRequireFieldAnswer';
 export { parseBooleanFromStringValue } from './utils/parseBooleanFromStringValue';
 export { parseDataFromContentType } from './utils/parseDataFromContentType';
 export {

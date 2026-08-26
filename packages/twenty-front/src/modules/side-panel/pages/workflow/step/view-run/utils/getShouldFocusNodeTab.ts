@@ -10,8 +10,5 @@ export const getShouldFocusNodeTab = ({
   stepExecutionStatus: WorkflowRunStepStatus;
   actionType: WorkflowActionType | undefined;
 }) => {
-  return (
-    (actionType === 'FORM' || actionType === 'REQUIRE_FIELD') &&
-    stepExecutionStatus === 'PENDING'
-  );
+  return actionType === 'FORM' && stepExecutionStatus === 'PENDING';
 };
