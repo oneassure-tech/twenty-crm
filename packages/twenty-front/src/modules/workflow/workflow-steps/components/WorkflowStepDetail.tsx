@@ -21,6 +21,7 @@ import { WorkflowEditActionIfElse } from '@/workflow/workflow-steps/workflow-act
 import { WorkflowEditActionIterator } from '@/workflow/workflow-steps/workflow-actions/iterator-action/components/WorkflowEditActionIterator';
 import { WorkflowEditActionLogicFunction } from '@/workflow/workflow-steps/workflow-actions/logic-function-action/components/WorkflowEditActionLogicFunction';
 import { WorkflowEditActionPickRecord } from '@/workflow/workflow-steps/workflow-actions/pick-record-action/components/WorkflowEditActionPickRecord';
+import { WorkflowEditActionUserPrompt } from '@/workflow/workflow-steps/workflow-actions/user-prompt-action/components/WorkflowEditActionUserPrompt';
 import { WorkflowEditTriggerCronForm } from '@/workflow/workflow-trigger/components/WorkflowEditTriggerCronForm';
 import { WorkflowEditTriggerDatabaseEventForm } from '@/workflow/workflow-trigger/components/WorkflowEditTriggerDatabaseEventForm';
 import { WorkflowEditTriggerManual } from '@/workflow/workflow-trigger/components/WorkflowEditTriggerManual';
@@ -210,6 +211,16 @@ export const WorkflowStepDetail = ({
           return (
             <WorkflowEditActionFormBuilder
               triggerType={trigger?.type}
+              key={stepId}
+              action={stepDefinition.definition}
+              actionOptions={props}
+            />
+          );
+        }
+        case 'USER_PROMPT': {
+          return (
+            <WorkflowEditActionUserPrompt
+              trigger={trigger}
               key={stepId}
               action={stepDefinition.definition}
               actionOptions={props}

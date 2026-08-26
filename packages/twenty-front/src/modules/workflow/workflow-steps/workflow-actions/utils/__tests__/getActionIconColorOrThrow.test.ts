@@ -33,10 +33,14 @@ describe('getActionIconColorOrThrow', () => {
     });
   });
 
-  it('returns orange for FORM', () => {
-    expect(getActionIconColorOrThrow('FORM')).toBe(
-      themeCssVariables.color.orange,
-    );
+  it('returns orange for human input actions', () => {
+    const humanInputActions: WorkflowActionType[] = ['FORM', 'USER_PROMPT'];
+
+    humanInputActions.forEach((actionType) => {
+      expect(getActionIconColorOrThrow(actionType)).toBe(
+        themeCssVariables.color.orange,
+      );
+    });
   });
 
   it('returns green12 for ITERATOR, EMPTY, FILTER, IF_ELSE, DELAY', () => {

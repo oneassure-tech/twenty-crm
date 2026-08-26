@@ -218,6 +218,29 @@ export const computeStepOutputSchema = ({
       return generateFormOutputSchema(formFields, objectMetadataItems);
     }
 
+    case 'USER_PROMPT': {
+      return {
+        answer: {
+          isLeaf: true,
+          type: FieldMetadataType.TEXT,
+          label: 'Answer',
+          value: '',
+        },
+        selectedOptionId: {
+          isLeaf: true,
+          type: FieldMetadataType.TEXT,
+          label: 'Selected option ID',
+          value: '',
+        },
+        isOther: {
+          isLeaf: true,
+          type: FieldMetadataType.BOOLEAN,
+          label: 'Is a typed "Other" answer',
+          value: false,
+        },
+      };
+    }
+
     case 'SEND_EMAIL': {
       return {
         success: {

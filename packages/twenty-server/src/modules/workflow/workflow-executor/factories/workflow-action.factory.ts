@@ -25,6 +25,7 @@ import { FindRecordsWorkflowAction } from 'src/modules/workflow/workflow-executo
 import { PickRecordWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/pick-record.workflow-action';
 import { UpdateRecordWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/update-record.workflow-action';
 import { UpsertRecordWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/upsert-record.workflow-action';
+import { UserPromptWorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/user-prompt/user-prompt.workflow-action';
 import { WorkflowActionType } from 'twenty-shared/workflow';
 
 @Injectable()
@@ -39,6 +40,7 @@ export class WorkflowActionFactory {
     private readonly findRecordsWorkflowAction: FindRecordsWorkflowAction,
     private readonly pickRecordWorkflowAction: PickRecordWorkflowAction,
     private readonly formWorkflowAction: FormWorkflowAction,
+    private readonly userPromptWorkflowAction: UserPromptWorkflowAction,
     private readonly filterWorkflowAction: FilterWorkflowAction,
     private readonly ifElseWorkflowAction: IfElseWorkflowAction,
     private readonly iteratorWorkflowAction: IteratorWorkflowAction,
@@ -77,6 +79,8 @@ export class WorkflowActionFactory {
         return this.pickRecordWorkflowAction;
       case WorkflowActionType.FORM:
         return this.formWorkflowAction;
+      case WorkflowActionType.USER_PROMPT:
+        return this.userPromptWorkflowAction;
       case WorkflowActionType.FILTER:
         return this.filterWorkflowAction;
       case WorkflowActionType.IF_ELSE:
