@@ -73,16 +73,34 @@ export const WorkflowEditActionUserPrompt = ({
   const { activeNonSystemObjectMetadataItems } =
     useFilteredObjectMetadataItems();
 
-  // A database-event workflow already knows which object it watches, so the
-  // step defaults to it rather than making the author pick it twice.
-  const triggerObjectNameSingular =
+  // A database-event workflow already knows which object it watches and which
+  // record fired it, so the step defaults to both rather than making the
+  // author wire them up by hand.
+  const { objectType: triggerObjectNameSingular, event: triggerEvent } =
     trigger?.type === 'DATABASE_EVENT' && isDefined(trigger.settings.eventName)
-      ? splitWorkflowTriggerEventName(trigger.settings.eventName).objectType
-      : undefined;
+      ? splitWorkflowTriggerEventName(trigger.settings.eventName)
+      : { objectType: undefined, event: undefined };
+
+  // The trigger's output schema exposes the record under properties.after (or
+  // properties.before for deletions), so the variable has to be written that
+  // way - {{trigger.recordId}} resolves at run time but shows as "Not Found"
+  // in the builder because it is not part of that schema.
+  const triggerRecordIdVariable = isDefined(triggerEvent)
+    ? triggerEvent === 'deleted' || triggerEvent === 'destroyed'
+      ? '{{trigger.properties.before.id}}'
+      : '{{trigger.properties.after.id}}'
+    : '';
 
   const [formData, setFormData] = useState<UserPromptInput>({
     ...action.settings.input,
-    objectName: action.settings.input.objectName || (triggerObjectNameSingular ?? ''),
+    objectName:
+      action.settings.input.objectName || (triggerObjectNameSingular ?? ''),
+    objectRecordId:
+      action.settings.input.objectRecordId === '' ||
+      // Replace the server-side placeholder with the schema-backed path.
+      action.settings.input.objectRecordId === '{{trigger.recordId}}'
+        ? triggerRecordIdVariable
+        : action.settings.input.objectRecordId,
   });
 
   const isFormDisabled = actionOptions.readonly === true;
@@ -292,6 +310,9 @@ export const WorkflowEditActionUserPrompt = ({
 
         <FormSelectFieldInput
           label={t`Object`}
+          // Without this an unset value silently renders the first option, so
+          // the step looks configured while nothing is actually saved.
+          isNullable
           defaultValue={formData.objectName}
           options={objectOptions}
           onChange={(objectName) => {
@@ -308,6 +329,9 @@ export const WorkflowEditActionUserPrompt = ({
         <FormSelectFieldInput
           label={t`Save answer to`}
           hint={t`Only text fields can be used, because a typed answer is saved to this same field.`}
+          // Without this an unset value silently renders the first option, so
+          // the step looks configured while nothing is actually saved.
+          isNullable
           defaultValue={formData.fieldName}
           options={textFieldOptions}
           onChange={(fieldName) => {

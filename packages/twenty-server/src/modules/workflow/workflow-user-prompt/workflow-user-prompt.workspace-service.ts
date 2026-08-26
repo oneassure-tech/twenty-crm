@@ -334,6 +334,8 @@ export class WorkflowUserPromptWorkspaceService {
       objectNameSingular: flatObjectMetadata.nameSingular,
       objectNamePlural: flatObjectMetadata.namePlural,
       recordId: objectRecordId,
+      fieldName,
+      answer,
     };
   }
 

@@ -14,4 +14,6 @@ export type UpdatedRecordInfo = {
   objectNameSingular: string;
   objectNamePlural: string;
   recordId: string;
+  fieldName: string;
+  answer: string;
 };

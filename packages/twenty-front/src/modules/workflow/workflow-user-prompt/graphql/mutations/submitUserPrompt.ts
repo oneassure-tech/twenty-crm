@@ -7,6 +7,8 @@ export const SUBMIT_USER_PROMPT = gql`
       objectNameSingular
       objectNamePlural
       recordId
+      fieldName
+      answer
     }
   }
 `;
