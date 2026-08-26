@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ToolModule } from 'src/engine/core-modules/tool/tool.module';
 import { WorkflowTriggerController } from 'src/engine/core-modules/workflow/controllers/workflow-trigger.controller';
-import { RequiredFieldPromptResolver } from 'src/engine/core-modules/workflow/resolvers/required-field-prompt.resolver';
 import { WorkflowBuilderResolver } from 'src/engine/core-modules/workflow/resolvers/workflow-builder.resolver';
 import { WorkflowTriggerResolver } from 'src/engine/core-modules/workflow/resolvers/workflow-trigger.resolver';
 import { WorkflowVersionEdgeResolver } from 'src/engine/core-modules/workflow/resolvers/workflow-version-edge.resolver';
@@ -42,9 +41,6 @@ import { WorkflowTriggerModule } from 'src/modules/workflow/workflow-trigger/wor
   ],
   controllers: [WorkflowTriggerController],
   providers: [
-    // Separate from the other workflow resolvers because it is the only one not
-    // gated on the WORKFLOWS settings permission -- see the resolver for why.
-    RequiredFieldPromptResolver,
     WorkflowTriggerResolver,
     WorkflowBuilderResolver,
     WorkflowVersionStepResolver,

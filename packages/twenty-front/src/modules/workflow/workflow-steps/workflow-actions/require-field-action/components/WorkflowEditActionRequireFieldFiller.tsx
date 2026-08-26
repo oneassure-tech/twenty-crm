@@ -72,17 +72,8 @@ export const WorkflowEditActionRequireFieldFiller = ({
     <>
       <WorkflowRunSSESubscribeEffect workflowRunId={workflowRunId} />
       <WorkflowStepBody>
-        {/* Narrowed to the render-only fields: the same control is used by the
-            standalone prompt, which gets its data from a DTO rather than a step
-            definition and has no objectName / objectRecordId to pass. */}
         <WorkflowRequireFieldInput
-          input={{
-            label: action.settings.input.label,
-            placeholder: action.settings.input.placeholder,
-            type: action.settings.input.type,
-            fieldMetadataId: action.settings.input.fieldMetadataId,
-            value,
-          }}
+          input={action.settings.input}
           readonly={actionOptions.readonly}
           onChange={setValue}
           onError={setError}

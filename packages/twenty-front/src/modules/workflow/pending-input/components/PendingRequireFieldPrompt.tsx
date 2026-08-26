@@ -23,7 +23,7 @@ type SubmittedTarget = {
 // the prompt disappears solely because the run stopped waiting, which means
 // either it was answered or Discard stopped the run outright.
 export const PendingRequireFieldPrompt = () => {
-  const { pendingStep, refetchPendingSteps } = usePendingRequireFieldStep();
+  const { pendingStep } = usePendingRequireFieldStep();
   const { openModal, closeModal } = useModal();
 
   // Kept here rather than in the modal because the modal unmounts on submit,
@@ -45,27 +45,21 @@ export const PendingRequireFieldPrompt = () => {
           // Remounts on a different run so the input never keeps a stale answer.
           key={pendingStep.workflowRunId}
           pendingStep={pendingStep}
-          // Refetch on both exits so a second queued prompt, if any, opens
-          // straight away instead of waiting for the next write.
-          onClosed={() => {
-            closeModal(PENDING_REQUIRE_FIELD_MODAL_ID);
-            refetchPendingSteps();
-          }}
+          onClosed={() => closeModal(PENDING_REQUIRE_FIELD_MODAL_ID)}
           onSubmitted={() => {
             closeModal(PENDING_REQUIRE_FIELD_MODAL_ID);
-            refetchPendingSteps();
 
-            // Comes from the server, which resolves it from the trigger
-            // payload. The step's own objectRecordId is an unresolved variable
-            // template, so it could never be used to refresh anything.
-            if (!isDefined(pendingStep.recordId)) {
+            // settings.input.objectRecordId holds an unresolved variable
+            // template, so the real id has to come from the trigger payload.
+            // Without it there is no record to refresh.
+            if (!isDefined(pendingStep.triggerRecordId)) {
               return;
             }
 
             setSubmittedTarget({
-              objectNameSingular: pendingStep.objectNameSingular,
-              recordId: pendingStep.recordId,
-              fieldName: pendingStep.fieldName,
+              objectNameSingular: pendingStep.step.settings.input.objectName,
+              recordId: pendingStep.triggerRecordId,
+              fieldName: pendingStep.step.settings.input.fieldName,
             });
           }}
         />

@@ -7,7 +7,6 @@ import { CodeStepBuildModule } from 'src/modules/workflow/workflow-builder/workf
 import { WorkflowVersionStepModule } from 'src/modules/workflow/workflow-builder/workflow-version-step/workflow-version-step.module';
 import { WorkflowExecutorModule } from 'src/modules/workflow/workflow-executor/workflow-executor.module';
 import { RunWorkflowJob } from 'src/modules/workflow/workflow-runner/jobs/run-workflow.job';
-import { RequiredFieldPromptWorkspaceService } from 'src/modules/workflow/workflow-runner/required-field-prompt/required-field-prompt.workspace-service';
 import { WorkflowRunQueueModule } from 'src/modules/workflow/workflow-runner/workflow-run-queue/workflow-run-queue.module';
 import { WorkflowRunModule } from 'src/modules/workflow/workflow-runner/workflow-run/workflow-run.module';
 import { WorkflowRunnerWorkspaceService } from 'src/modules/workflow/workflow-runner/workspace-services/workflow-runner.workspace-service';
@@ -23,13 +22,7 @@ import { WorkflowRunnerWorkspaceService } from 'src/modules/workflow/workflow-ru
     WorkflowVersionStepModule,
     CodeStepBuildModule,
   ],
-  providers: [
-    WorkflowRunnerWorkspaceService,
-    // Backs the member-facing prompt endpoints. Kept as its own service so the
-    // ownership checks guarding them live in one place.
-    RequiredFieldPromptWorkspaceService,
-    RunWorkflowJob,
-  ],
-  exports: [WorkflowRunnerWorkspaceService, RequiredFieldPromptWorkspaceService],
+  providers: [WorkflowRunnerWorkspaceService, RunWorkflowJob],
+  exports: [WorkflowRunnerWorkspaceService],
 })
 export class WorkflowRunnerModule {}

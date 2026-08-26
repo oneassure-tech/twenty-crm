@@ -1,19 +1,18 @@
-import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
+import { useStopWorkflowRun } from '@/workflow/hooks/useStopWorkflowRun';
+import { useUpdateWorkflowRunStep } from '@/workflow/workflow-steps/hooks/useUpdateWorkflowRunStep';
+import { useSubmitFormStep } from '@/workflow/workflow-steps/workflow-actions/form-action/hooks/useSubmitFormStep';
+import { WorkflowRequireFieldInput } from '@/workflow/workflow-steps/workflow-actions/require-field-action/components/WorkflowRequireFieldInput';
 import { ModalStatefulWrapper } from '@/ui/layout/modal/components/ModalStatefulWrapper';
 import { useModal } from '@/ui/layout/modal/hooks/useModal';
-import { DISCARD_MY_REQUIRED_FIELD } from '@/workflow/pending-input/graphql/mutations/discardMyRequiredField';
-import { SUBMIT_MY_REQUIRED_FIELD } from '@/workflow/pending-input/graphql/mutations/submitMyRequiredField';
-import { type PendingRequiredField } from '@/workflow/pending-input/types/PendingRequiredField';
-import { WorkflowRequireFieldInput } from '@/workflow/workflow-steps/workflow-actions/require-field-action/components/WorkflowRequireFieldInput';
-import { useMutation } from '@apollo/client/react';
+import { type PendingRequireFieldStep } from '@/workflow/pending-input/utils/findPendingRequireFieldStep';
 import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
 import { useState } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 import { hasRequireFieldAnswer } from 'twenty-shared/workflow';
 import { Button } from 'twenty-ui/input';
-import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { H1Title, H1TitleFontColor } from 'twenty-ui/typography';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 export const PENDING_REQUIRE_FIELD_MODAL_ID = 'pending-require-field-modal';
 
@@ -29,7 +28,7 @@ const StyledButtonContainer = styled.div`
 `;
 
 type PendingRequireFieldModalProps = {
-  pendingStep: PendingRequiredField;
+  pendingStep: PendingRequireFieldStep;
   onClosed: () => void;
   onSubmitted: () => void;
 };
@@ -41,28 +40,18 @@ export const PendingRequireFieldModal = ({
 }: PendingRequireFieldModalProps) => {
   const { t } = useLingui();
   const { closeModal } = useModal();
-  const apolloCoreClient = useApolloCoreClient();
+  const { submitFormStep } = useSubmitFormStep();
+  const { updateWorkflowRunStep } = useUpdateWorkflowRunStep();
+  const { stopWorkflowRun } = useStopWorkflowRun();
 
-  // These two replaced submitFormStep / updateWorkflowRunStep / stopWorkflowRun.
-  // All three sit behind the WORKFLOWS settings permission, so a member could
-  // never have completed a prompt even once it was visible to them.
-  const [submitMyRequiredField] = useMutation(SUBMIT_MY_REQUIRED_FIELD, {
-    client: apolloCoreClient,
-  });
-  const [discardMyRequiredField] = useMutation(DISCARD_MY_REQUIRED_FIELD, {
-    client: apolloCoreClient,
-  });
+  const { workflowRunId, step } = pendingStep;
 
-  const { workflowRunId, stepId } = pendingStep;
-
-  // Starts empty rather than seeded from the step: the prompt payload carries
-  // no draft value, and a required field is unanswered by definition.
-  const [value, setValue] = useState<unknown>(undefined);
+  const [value, setValue] = useState<unknown>(step.settings.input.value);
   const [error, setError] = useState<string | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Shares the answered-check with the server, so Submit can never be enabled
-  // for a value the server would refuse to write.
+  // Shares the answered-check with the server action, so Submit can never be
+  // enabled for a value the action would refuse to write.
   const canSubmit =
     !isSubmitting && !isDefined(error) && hasRequireFieldAnswer(value);
 
@@ -74,8 +63,24 @@ export const PendingRequireFieldModal = ({
     setIsSubmitting(true);
 
     try {
-      await submitMyRequiredField({
-        variables: { input: { workflowRunId, stepId, value } },
+      // Must happen before submitting: the server re-executes this step and
+      // reads the answer back off the step definition, so submitting first
+      // would re-run it with nothing to write.
+      await updateWorkflowRunStep({
+        workflowRunId,
+        step: {
+          ...step,
+          settings: {
+            ...step.settings,
+            input: { ...step.settings.input, value },
+          },
+        },
+      });
+
+      await submitFormStep({
+        stepId: step.id,
+        workflowRunId,
+        response: { [step.settings.input.fieldName]: value },
       });
 
       closeModal(PENDING_REQUIRE_FIELD_MODAL_ID);
@@ -92,9 +97,7 @@ export const PendingRequireFieldModal = ({
     setIsSubmitting(true);
 
     try {
-      await discardMyRequiredField({
-        variables: { input: { workflowRunId, stepId } },
-      });
+      await stopWorkflowRun(workflowRunId);
 
       closeModal(PENDING_REQUIRE_FIELD_MODAL_ID);
       onClosed();
@@ -120,18 +123,12 @@ export const PendingRequireFieldModal = ({
       autoHeight
     >
       <H1Title
-        title={pendingStep.label}
+        title={step.settings.input.label}
         fontColor={H1TitleFontColor.Primary}
       />
       <StyledInputContainer>
         <WorkflowRequireFieldInput
-          input={{
-            label: pendingStep.label,
-            placeholder: pendingStep.placeholder ?? undefined,
-            type: pendingStep.type,
-            fieldMetadataId: pendingStep.fieldMetadataId,
-            value,
-          }}
+          input={{ ...step.settings.input, value }}
           readonly={isSubmitting}
           onChange={setValue}
           onError={setError}
