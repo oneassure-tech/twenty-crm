@@ -140,7 +140,7 @@ export const triggerCreateRecordsOptimisticEffect = ({
             return [];
           }
 
-          const node = toReference(recordToCreate);
+          const node = toReference(recordToCreate, true);
 
           if (!isDefined(node)) {
             return [];
