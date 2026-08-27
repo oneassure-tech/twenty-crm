@@ -18,8 +18,11 @@ describe('getActionHeaderTypeOrThrow', () => {
     });
   });
 
-  it('should return "Human Input" for FORM action type', () => {
+  it('should return "Human Input" for FORM and USER_PROMPT action types', () => {
     expect(getActionHeaderTypeOrThrow('FORM').message).toBe('Human Input');
+    expect(getActionHeaderTypeOrThrow('USER_PROMPT').message).toBe(
+      'Human Input',
+    );
   });
 
   it('should return "Core" for SEND_EMAIL action type', () => {

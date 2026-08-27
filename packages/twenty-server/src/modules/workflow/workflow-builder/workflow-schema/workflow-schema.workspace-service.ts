@@ -115,6 +115,8 @@ export class WorkflowSchemaWorkspaceService {
           formFieldMetadataItems: step.settings.input,
           workspaceId,
         });
+      case WorkflowActionType.USER_PROMPT:
+        return this.computeUserPromptActionOutputSchema();
       case WorkflowActionType.ITERATOR: {
         const items = step.settings.input.items;
 
@@ -377,6 +379,29 @@ export class WorkflowSchemaWorkspaceService {
       );
 
     return generateFakeObjectRecord({ objectMetadataInfo });
+  }
+
+  private computeUserPromptActionOutputSchema(): OutputSchema {
+    return {
+      answer: {
+        isLeaf: true,
+        type: 'string',
+        label: 'Answer',
+        value: '',
+      },
+      selectedOptionId: {
+        isLeaf: true,
+        type: 'string',
+        label: 'Selected option ID',
+        value: '',
+      },
+      isOther: {
+        isLeaf: true,
+        type: 'boolean',
+        label: 'Is a typed "Other" answer',
+        value: false,
+      },
+    };
   }
 
   private computeSendEmailActionOutputSchema(): OutputSchema {

@@ -29,6 +29,7 @@ import {
   type workflowTriggerSchema,
   type workflowUpdateRecordActionSchema,
   type workflowUpsertRecordActionSchema,
+  type workflowUserPromptActionSchema,
   type workflowWebhookTriggerSchema,
 } from 'twenty-shared/workflow';
 import { type z } from 'zod';
@@ -67,6 +68,9 @@ export type WorkflowPickRecordAction = z.infer<
 export type WorkflowDelayAction = z.infer<typeof workflowDelayActionSchema>;
 export type WorkflowFilterAction = z.infer<typeof workflowFilterActionSchema>;
 export type WorkflowFormAction = z.infer<typeof workflowFormActionSchema>;
+export type WorkflowUserPromptAction = z.infer<
+  typeof workflowUserPromptActionSchema
+>;
 export type WorkflowIfElseAction = z.infer<typeof workflowIfElseActionSchema>;
 export type WorkflowHttpRequestAction = z.infer<
   typeof workflowHttpRequestActionSchema
@@ -92,6 +96,7 @@ export type WorkflowAction =
   | WorkflowFilterAction
   | WorkflowIfElseAction
   | WorkflowFormAction
+  | WorkflowUserPromptAction
   | WorkflowHttpRequestAction
   | WorkflowAiAgentAction
   | WorkflowIteratorAction

@@ -17,6 +17,7 @@ import { workflowPickRecordActionSchema } from './pick-record-action-schema';
 import { workflowSendEmailActionSchema } from './send-email-action-schema';
 import { workflowUpdateRecordActionSchema } from './update-record-action-schema';
 import { workflowUpsertRecordActionSchema } from './upsert-record-action-schema';
+import { workflowUserPromptActionSchema } from './user-prompt-action-schema';
 import { workflowDelayActionSchema } from './workflow-delay-action-schema';
 
 export const workflowActionSchema = z.discriminatedUnion('type', [
@@ -32,6 +33,7 @@ export const workflowActionSchema = z.discriminatedUnion('type', [
   workflowFindRecordsActionSchema,
   workflowPickRecordActionSchema,
   workflowFormActionSchema,
+  workflowUserPromptActionSchema,
   workflowHttpRequestActionSchema,
   workflowAiAgentActionSchema,
   workflowFilterActionSchema,
