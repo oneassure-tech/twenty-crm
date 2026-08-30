@@ -29,6 +29,8 @@ export const computePermissionIntersection = (
     let canUpdateObjectRecords = true;
     let canSoftDeleteObjectRecords = true;
     let canDestroyObjectRecords = true;
+    // Most restrictive wins: if any role is owner-restricted, the intersection is too.
+    let restrictToOwnedRecords = false;
     const restrictedFields: Record<string, RestrictedFieldPermissions> = {};
 
     for (const permissions of permissionsArray) {
@@ -51,6 +53,8 @@ export const computePermissionIntersection = (
         objPerm.canSoftDeleteObjectRecords === true;
       canDestroyObjectRecords =
         canDestroyObjectRecords && objPerm.canDestroyObjectRecords === true;
+      restrictToOwnedRecords =
+        restrictToOwnedRecords || objPerm.restrictToOwnedRecords === true;
 
       if (objPerm.restrictedFields) {
         for (const [fieldName, fieldPerm] of Object.entries(
@@ -84,6 +88,7 @@ export const computePermissionIntersection = (
       canUpdateObjectRecords,
       canSoftDeleteObjectRecords,
       canDestroyObjectRecords,
+      restrictToOwnedRecords,
       restrictedFields,
       rowLevelPermissionPredicates: [],
       rowLevelPermissionPredicateGroups: [],

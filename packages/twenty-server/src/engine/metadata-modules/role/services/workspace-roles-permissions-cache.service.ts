@@ -230,6 +230,9 @@ export class WorkspaceRolesPermissionsCacheService extends WorkspaceCacheProvide
           canUpdateObjectRecords: canUpdate,
           canSoftDeleteObjectRecords: canSoftDelete,
           canDestroyObjectRecords: canDestroy,
+          restrictToOwnedRecords: isSystem
+            ? false
+            : role.restrictToOwnedRecords,
           restrictedFields,
           rowLevelPermissionPredicates: roleRowLevelPermissionPredicates.filter(
             (rowLevelPermissionPredicate) =>

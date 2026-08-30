@@ -55,6 +55,11 @@ export class UpdateRolePayload {
   @IsBoolean()
   @IsOptional()
   @Field({ nullable: true })
+  restrictToOwnedRecords?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  @Field({ nullable: true })
   canDestroyAllObjectRecords?: boolean;
 
   @IsBoolean()

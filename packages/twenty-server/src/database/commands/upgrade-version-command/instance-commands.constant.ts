@@ -100,6 +100,7 @@ import { AddDisplayFieldsToApplicationRegistrationFastInstanceCommand } from './
 import { BackfillDisplayFieldsOnApplicationRegistrationSlowInstanceCommand } from './2-19/2-19-instance-command-slow-1783073776591-backfill-display-fields-on-application-registration';
 import { BackfillIsFeaturedOnApplicationRegistrationSlowInstanceCommand } from './2-19/2-19-instance-command-slow-1783120000000-backfill-is-featured-on-application-registration';
 import { AllowServerScopedFileFastInstanceCommand } from 'src/database/commands/upgrade-version-command/2-20/2-20-instance-command-fast-1783499671541-allow-server-scoped-file';
+import { AddRestrictToOwnedRecordsToRoleFastInstanceCommand } from 'src/database/commands/upgrade-version-command/2-20/2-20-instance-command-fast-1783600000000-add-restrict-to-owned-records-to-role';
 import { CreateWorkflowVersionCoreTableFastInstanceCommand } from './2-20/2-20-instance-command-fast-1783512000000-create-workflow-version-core-table';
 import { RenameIsFeaturedToIsVettedOnApplicationRegistrationFastInstanceCommand } from './2-20/2-20-instance-command-fast-1783527064000-rename-is-featured-to-is-vetted-on-application-registration';
 
@@ -206,4 +207,5 @@ export const INSTANCE_COMMANDS = [
   AllowServerScopedFileFastInstanceCommand,
   CreateWorkflowVersionCoreTableFastInstanceCommand,
   RenameIsFeaturedToIsVettedOnApplicationRegistrationFastInstanceCommand,
+  AddRestrictToOwnedRecordsToRoleFastInstanceCommand,
 ];

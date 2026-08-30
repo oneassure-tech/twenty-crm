@@ -33,6 +33,7 @@ const ROLE_BASIC_KEYS: Array<keyof Role> = [
   'canUpdateAllObjectRecords',
   'canSoftDeleteAllObjectRecords',
   'canDestroyAllObjectRecords',
+  'restrictToOwnedRecords',
   'canBeAssignedToUsers',
   'canBeAssignedToAgents',
   'canBeAssignedToApiKeys',

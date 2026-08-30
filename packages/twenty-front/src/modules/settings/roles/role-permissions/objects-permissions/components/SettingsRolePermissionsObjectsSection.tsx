@@ -1,3 +1,4 @@
+import { SettingsOptionCardContentToggle } from '@/settings/components/SettingsOptions/SettingsOptionCardContentToggle';
 import { SettingsRolePermissionsObjectsTableHeader } from '@/settings/roles/role-permissions/objects-permissions/components/SettingsRolePermissionsObjectsTableHeader';
 import { SettingsRolePermissionsObjectsTableRow } from '@/settings/roles/role-permissions/objects-permissions/components/SettingsRolePermissionsObjectsTableRow';
 import { type SettingsRolePermissionsObjectPermission } from '@/settings/roles/role-permissions/objects-permissions/types/SettingsRolePermissionsObjectPermission';
@@ -6,8 +7,10 @@ import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAto
 import { useSetAtomFamilyState } from '@/ui/utilities/state/jotai/hooks/useSetAtomFamilyState';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
+import { IconUserCircle } from 'twenty-ui/icon';
 import { H2Title } from 'twenty-ui/typography';
 import { Section } from 'twenty-ui/layout';
+import { Card } from 'twenty-ui/surfaces';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledTable = styled.div`
@@ -17,6 +20,10 @@ const StyledTable = styled.div`
 const StyledTableRows = styled.div`
   padding-bottom: ${themeCssVariables.spacing[2]};
   padding-top: ${themeCssVariables.spacing[2]};
+`;
+
+const StyledCardContainer = styled.div`
+  margin-top: ${themeCssVariables.spacing[4]};
 `;
 
 type SettingsRolePermissionsObjectsSectionProps = {
@@ -178,6 +185,24 @@ export const SettingsRolePermissionsObjectsSection = ({
           ))}
         </StyledTableRows>
       </StyledTable>
+      <StyledCardContainer>
+        <Card rounded>
+          <SettingsOptionCardContentToggle
+            Icon={IconUserCircle}
+            title={t`Only see records they own`}
+            description={t`Members with this role only see records assigned to them. Records they do not own are hidden everywhere, including search and the API.`}
+            checked={settingsDraftRole.restrictToOwnedRecords === true}
+            disabled={!isEditable}
+            onChange={() => {
+              setSettingsDraftRole({
+                ...settingsDraftRole,
+                restrictToOwnedRecords:
+                  !settingsDraftRole.restrictToOwnedRecords,
+              });
+            }}
+          />
+        </Card>
+      </StyledCardContainer>
     </Section>
   );
 };

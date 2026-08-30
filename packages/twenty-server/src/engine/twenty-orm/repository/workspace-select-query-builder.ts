@@ -24,6 +24,7 @@ import { WorkspaceDeleteQueryBuilder } from 'src/engine/twenty-orm/repository/wo
 import { WorkspaceInsertQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-insert-query-builder';
 import { WorkspaceSoftDeleteQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-soft-delete-query-builder';
 import { WorkspaceUpdateQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-update-query-builder';
+import { applyOwnedRecordsRestriction } from 'src/engine/twenty-orm/utils/apply-owned-records-restriction.util';
 import { applyRowLevelPermissionPredicates } from 'src/engine/twenty-orm/utils/apply-row-level-permission-predicates.util';
 import { formatResult } from 'src/engine/twenty-orm/utils/format-result.util';
 import { getObjectMetadataFromEntityTarget } from 'src/engine/twenty-orm/utils/get-object-metadata-from-entity-target.util';
@@ -341,6 +342,7 @@ export class WorkspaceSelectQueryBuilder<
 
   private validatePermissions(): void {
     this.applyRowLevelPermissionPredicates();
+    this.applyOwnedRecordsRestriction();
     validateQueryIsPermittedOrThrow({
       expressionMap: this.expressionMap,
       objectsPermissions: this.objectRecordsPermissions,
@@ -390,6 +392,30 @@ export class WorkspaceSelectQueryBuilder<
       internalContext: this.internalContext,
       authContext: this.authContext,
       featureFlagMap: this.featureFlagMap,
+    });
+  }
+
+  private applyOwnedRecordsRestriction(): void {
+    if (this.shouldBypassPermissionChecks) {
+      return;
+    }
+
+    // Subqueries carry no entity metadata; the restriction is applied on the
+    // original entity query instead.
+    if (this.expressionMap.mainAlias?.subQuery) {
+      return;
+    }
+
+    const objectMetadata = getObjectMetadataFromEntityTarget(
+      this.getMainAliasTarget(),
+      this.internalContext,
+    );
+
+    applyOwnedRecordsRestriction({
+      queryBuilder: this,
+      objectMetadataId: objectMetadata.id,
+      objectsPermissions: this.objectRecordsPermissions,
+      authContext: this.authContext,
     });
   }
 }
