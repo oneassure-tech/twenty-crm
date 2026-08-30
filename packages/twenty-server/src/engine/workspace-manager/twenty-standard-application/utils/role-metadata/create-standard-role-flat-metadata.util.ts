@@ -40,6 +40,7 @@ export const createStandardRoleFlatMetadata = ({
     canUpdateAllObjectRecords,
     canSoftDeleteAllObjectRecords,
     canDestroyAllObjectRecords,
+    restrictToOwnedRecords: false,
     canBeAssignedToUsers,
     canBeAssignedToAgents,
     canBeAssignedToApiKeys,
