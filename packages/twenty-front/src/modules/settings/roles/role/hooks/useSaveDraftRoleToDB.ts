@@ -142,6 +142,7 @@ export const useSaveDraftRoleToDB = ({
             settingsDraftRole.canSoftDeleteAllObjectRecords,
           canDestroyAllObjectRecords:
             settingsDraftRole.canDestroyAllObjectRecords,
+          restrictToOwnedRecords: settingsDraftRole.restrictToOwnedRecords,
           canBeAssignedToUsers: settingsDraftRole.canBeAssignedToUsers,
           canBeAssignedToAgents: settingsDraftRole.canBeAssignedToAgents,
           canBeAssignedToApiKeys: settingsDraftRole.canBeAssignedToApiKeys,
@@ -199,6 +200,7 @@ export const useSaveDraftRoleToDB = ({
                 settingsDraftRole.canSoftDeleteAllObjectRecords,
               canDestroyAllObjectRecords:
                 settingsDraftRole.canDestroyAllObjectRecords,
+              restrictToOwnedRecords: settingsDraftRole.restrictToOwnedRecords,
               canBeAssignedToUsers: settingsDraftRole.canBeAssignedToUsers,
               canBeAssignedToAgents: settingsDraftRole.canBeAssignedToAgents,
               canBeAssignedToApiKeys: settingsDraftRole.canBeAssignedToApiKeys,

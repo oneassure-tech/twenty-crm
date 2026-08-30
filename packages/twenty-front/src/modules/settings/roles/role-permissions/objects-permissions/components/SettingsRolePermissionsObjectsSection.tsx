@@ -190,7 +190,7 @@ export const SettingsRolePermissionsObjectsSection = ({
           <SettingsOptionCardContentToggle
             Icon={IconUserCircle}
             title={t`Only see records they own`}
-            description={t`Members with this role only see records assigned to them. Records they do not own are hidden everywhere, including search and the API.`}
+            description={t`Applies only to objects having an Owner field linked to Workspace Member. On those, members with this role see records they own and nothing else, in lists, search and the API alike. Objects without an Owner field stay fully visible.`}
             checked={settingsDraftRole.restrictToOwnedRecords === true}
             disabled={!isEditable}
             onChange={() => {
