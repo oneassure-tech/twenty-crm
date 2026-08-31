@@ -40,6 +40,8 @@ export const createStandardRoleFlatMetadata = ({
     canUpdateAllObjectRecords,
     canSoftDeleteAllObjectRecords,
     canDestroyAllObjectRecords,
+    // Standard roles are never restricted to owned records.
+    canOnlyAccessOwnedObjectRecords: false,
     canBeAssignedToUsers,
     canBeAssignedToAgents,
     canBeAssignedToApiKeys,

@@ -1,7 +1,9 @@
 import {
   type ObjectsPermissions,
+  type OwnedRecordsRestriction,
   type RestrictedFieldPermissions,
 } from 'twenty-shared/types';
+import { isDefined } from 'twenty-shared/utils';
 
 export const computePermissionIntersection = (
   permissionsArray: ObjectsPermissions[],
@@ -30,6 +32,9 @@ export const computePermissionIntersection = (
     let canSoftDeleteObjectRecords = true;
     let canDestroyObjectRecords = true;
     const restrictedFields: Record<string, RestrictedFieldPermissions> = {};
+    // An intersection must be at least as restrictive as its most restrictive
+    // input, so a restriction on any role is carried over rather than dropped.
+    let ownedRecordsRestriction: OwnedRecordsRestriction | null = null;
 
     for (const permissions of permissionsArray) {
       const objPerm = permissions[objectMetadataId];
@@ -51,6 +56,13 @@ export const computePermissionIntersection = (
         objPerm.canSoftDeleteObjectRecords === true;
       canDestroyObjectRecords =
         canDestroyObjectRecords && objPerm.canDestroyObjectRecords === true;
+
+      if (
+        !isDefined(ownedRecordsRestriction) &&
+        isDefined(objPerm.ownedRecordsRestriction)
+      ) {
+        ownedRecordsRestriction = objPerm.ownedRecordsRestriction;
+      }
 
       if (objPerm.restrictedFields) {
         for (const [fieldName, fieldPerm] of Object.entries(
@@ -85,6 +97,7 @@ export const computePermissionIntersection = (
       canSoftDeleteObjectRecords,
       canDestroyObjectRecords,
       restrictedFields,
+      ownedRecordsRestriction,
       rowLevelPermissionPredicates: [],
       rowLevelPermissionPredicateGroups: [],
     };

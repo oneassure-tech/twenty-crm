@@ -13,6 +13,7 @@ const BASE_FIELD_PERMISSION: FieldPermission = {
 const BASE_ROLE_MOCK: Role = {
   canAccessAllTools: false,
   canDestroyAllObjectRecords: true,
+  canOnlyAccessOwnedObjectRecords: false,
   canReadAllObjectRecords: true,
   canSoftDeleteAllObjectRecords: true,
   canUpdateAllObjectRecords: true,

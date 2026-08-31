@@ -4,6 +4,7 @@ import { getRoleWithUpsertedFieldPermission } from '@/settings/roles/role-permis
 const BASE_ROLE_MOCK: Role = {
   canAccessAllTools: false,
   canDestroyAllObjectRecords: true,
+  canOnlyAccessOwnedObjectRecords: false,
   canReadAllObjectRecords: true,
   canSoftDeleteAllObjectRecords: true,
   canUpdateAllObjectRecords: true,

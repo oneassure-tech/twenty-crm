@@ -8,6 +8,7 @@ import {
 import { STANDARD_OBJECTS } from 'twenty-shared/metadata';
 import { type Repository } from 'typeorm';
 
+import { FieldMetadataEntity } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
 import { ObjectMetadataEntity } from 'src/engine/metadata-modules/object-metadata/object-metadata.entity';
 import { FieldPermissionEntity } from 'src/engine/metadata-modules/object-permission/field-permission/field-permission.entity';
 import { ObjectPermissionEntity } from 'src/engine/metadata-modules/object-permission/object-permission.entity';
@@ -40,6 +41,7 @@ const createBaseRole = (
     canUpdateAllObjectRecords: false,
     canSoftDeleteAllObjectRecords: false,
     canDestroyAllObjectRecords: false,
+    canOnlyAccessOwnedObjectRecords: false,
     description: null,
     icon: null,
     isEditable: true,
@@ -65,6 +67,9 @@ describe('WorkspaceRolesPermissionsCacheService', () => {
   >;
   let rolePermissionFlagRepository: jest.Mocked<
     Pick<Repository<RolePermissionFlagEntity>, 'find'>
+  >;
+  let fieldMetadataRepository: jest.Mocked<
+    Pick<Repository<FieldMetadataEntity>, 'find'>
   >;
 
   const workspaceObjectMetadataFixture: ObjectMetadataEntity[] = [
@@ -97,6 +102,10 @@ describe('WorkspaceRolesPermissionsCacheService', () => {
       find: jest.fn().mockResolvedValue(workspaceObjectMetadataFixture),
     };
 
+    fieldMetadataRepository = {
+      find: jest.fn().mockResolvedValue([]),
+    };
+
     objectPermissionRepository = {
       find: jest.fn().mockResolvedValue([]),
     };
@@ -120,6 +129,10 @@ describe('WorkspaceRolesPermissionsCacheService', () => {
         {
           provide: getRepositoryToken(ObjectMetadataEntity),
           useValue: objectMetadataRepository,
+        },
+        {
+          provide: getRepositoryToken(FieldMetadataEntity),
+          useValue: fieldMetadataRepository,
         },
         {
           provide: getWorkspaceScopedRepositoryToken(RoleEntity),

@@ -9,4 +9,5 @@ export const fromFlatObjectPermissionToObjectPermissionDto = (
   canUpdateObjectRecords: flatObjectPermission.canUpdateObjectRecords,
   canSoftDeleteObjectRecords: flatObjectPermission.canSoftDeleteObjectRecords,
   canDestroyObjectRecords: flatObjectPermission.canDestroyObjectRecords,
+  ownerFieldMetadataId: flatObjectPermission.ownerFieldMetadataId,
 });

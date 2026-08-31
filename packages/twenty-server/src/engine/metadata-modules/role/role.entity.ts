@@ -44,6 +44,11 @@ export class RoleEntity extends SyncableEntity implements Required<RoleEntity> {
   @Column({ nullable: false, default: false })
   canDestroyAllObjectRecords: boolean;
 
+  // Narrows every object operation to records the current workspace member owns.
+  // The owner field is designated per object on objectPermission.
+  @Column({ nullable: false, default: false })
+  canOnlyAccessOwnedObjectRecords: boolean;
+
   @Column({ nullable: true, type: 'text' })
   description: string | null;
 

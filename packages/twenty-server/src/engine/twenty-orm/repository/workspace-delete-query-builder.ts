@@ -24,6 +24,7 @@ import { validateQueryIsPermittedOrThrow } from 'src/engine/twenty-orm/repositor
 import { type WorkspaceSelectQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-select-query-builder';
 import { type WorkspaceSoftDeleteQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-soft-delete-query-builder';
 import { type WorkspaceUpdateQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-update-query-builder';
+import { applyOwnedRecordsRestriction } from 'src/engine/twenty-orm/utils/apply-owned-records-restriction.util';
 import { applyRowLevelPermissionPredicates } from 'src/engine/twenty-orm/utils/apply-row-level-permission-predicates.util';
 import { applyTableAliasOnWhereCondition } from 'src/engine/twenty-orm/utils/apply-table-alias-on-where-condition';
 import { computeEventSelectQueryBuilder } from 'src/engine/twenty-orm/utils/compute-event-select-query-builder.util';
@@ -74,6 +75,7 @@ export class WorkspaceDeleteQueryBuilder<
   override async execute(): Promise<DeleteResult & { generatedMaps: T[] }> {
     try {
       this.applyRowLevelPermissionPredicates();
+      this.applyOwnedRecordsRestriction();
       validateQueryIsPermittedOrThrow({
         expressionMap: this.expressionMap,
         objectsPermissions: this.objectRecordsPermissions,
@@ -165,6 +167,25 @@ export class WorkspaceDeleteQueryBuilder<
     }
 
     return mainAliasTarget;
+  }
+
+  private applyOwnedRecordsRestriction(): void {
+    if (this.shouldBypassPermissionChecks) {
+      return;
+    }
+
+    const objectMetadata = getObjectMetadataFromEntityTarget(
+      this.getMainAliasTarget(),
+      this.internalContext,
+    );
+
+    applyOwnedRecordsRestriction({
+      queryBuilder: this as unknown as WorkspaceSelectQueryBuilder<T>,
+      objectMetadata,
+      objectRecordsPermissions: this.objectRecordsPermissions,
+      authContext: this.authContext,
+      shouldBypassPermissionChecks: this.shouldBypassPermissionChecks,
+    });
   }
 
   private applyRowLevelPermissionPredicates(): void {

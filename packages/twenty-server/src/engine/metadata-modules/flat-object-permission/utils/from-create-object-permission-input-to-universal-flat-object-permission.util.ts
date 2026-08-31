@@ -25,6 +25,7 @@ export const fromCreateObjectPermissionInputToUniversalFlatObjectPermission = ({
     canUpdateObjectRecords,
     canSoftDeleteObjectRecords,
     canDestroyObjectRecords,
+    ownerFieldMetadataId,
     universalIdentifier,
   } = createObjectPermissionInput;
   const now = new Date().toISOString();
@@ -48,6 +49,7 @@ export const fromCreateObjectPermissionInputToUniversalFlatObjectPermission = ({
     canUpdateObjectRecords: canUpdateObjectRecords ?? undefined,
     canSoftDeleteObjectRecords: canSoftDeleteObjectRecords ?? undefined,
     canDestroyObjectRecords: canDestroyObjectRecords ?? undefined,
+    ownerFieldMetadataId: ownerFieldMetadataId ?? null,
     createdAt: now,
     updatedAt: now,
   };

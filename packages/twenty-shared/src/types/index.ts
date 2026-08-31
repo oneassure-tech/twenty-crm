@@ -271,6 +271,7 @@ export { RelationType } from './RelationType';
 export type { RelationUpdatePayload } from './RelationUpdatePayload';
 export type { RemoveSuffix } from './RemoveSuffix.type';
 export type { RestrictedFieldPermissions } from './RestrictedFieldPermissions';
+export type { OwnedRecordsRestriction } from './OwnedRecordsRestriction';
 export type { RestrictedFieldsPermissions } from './RestrictedFieldsPermissions';
 export type { RowLevelPermissionPredicate } from './RowLevelPermissionPredicate';
 export type { RowLevelPermissionPredicateGroup } from './RowLevelPermissionPredicateGroup';

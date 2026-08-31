@@ -1,9 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
 import { msg } from '@lingui/core/macro';
+import {
+  CoreObjectNameSingular,
+  FieldMetadataType,
+  RelationType,
+} from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 
 import { ApplicationService } from 'src/engine/core-modules/application/application.service';
+import { type AllFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/all-flat-entity-maps.type';
 import { WorkspaceManyOrAllFlatEntityMapsCacheService } from 'src/engine/metadata-modules/flat-entity/services/workspace-many-or-all-flat-entity-maps-cache.service';
 import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
 import { type FlatObjectPermission } from 'src/engine/metadata-modules/flat-object-permission/types/flat-object-permission.type';
@@ -37,7 +43,12 @@ export class ObjectPermissionService {
     workspaceId: string;
     input: UpsertObjectPermissionsInput;
   }): Promise<FlatObjectPermission[]> {
-    const { flatObjectPermissionMaps, flatRoleMaps, flatObjectMetadataMaps } =
+    const {
+      flatObjectPermissionMaps,
+      flatRoleMaps,
+      flatObjectMetadataMaps,
+      flatFieldMetadataMaps,
+    } =
       await this.workspaceManyOrAllFlatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
         {
           workspaceId,
@@ -45,6 +56,7 @@ export class ObjectPermissionService {
             'flatObjectPermissionMaps',
             'flatRoleMaps',
             'flatObjectMetadataMaps',
+            'flatFieldMetadataMaps',
           ],
         },
       );
@@ -110,6 +122,15 @@ export class ObjectPermissionService {
           },
         );
       }
+
+      if (isDefined(desired.ownerFieldMetadataId)) {
+        this.validateOwnerFieldMetadataOrThrow({
+          ownerFieldMetadataId: desired.ownerFieldMetadataId,
+          objectMetadataId: desired.objectMetadataId,
+          flatFieldMetadataMaps,
+          flatObjectMetadataMaps,
+        });
+      }
     }
 
     const flatEntityToCreate: (UniversalFlatObjectPermission & {
@@ -135,6 +156,7 @@ export class ObjectPermissionService {
               canUpdateObjectRecords: desired.canUpdateObjectRecords,
               canSoftDeleteObjectRecords: desired.canSoftDeleteObjectRecords,
               canDestroyObjectRecords: desired.canDestroyObjectRecords,
+              ownerFieldMetadataId: desired.ownerFieldMetadataId,
             },
             flatApplication,
             flatRoleMaps,
@@ -159,7 +181,13 @@ export class ObjectPermissionService {
             ? desired.canDestroyObjectRecords
             : current.canDestroyObjectRecords;
 
+        const effectiveOwnerFieldMetadataId =
+          desired.ownerFieldMetadataId !== undefined
+            ? desired.ownerFieldMetadataId
+            : current.ownerFieldMetadataId;
+
         const canChanged =
+          effectiveOwnerFieldMetadataId !== current.ownerFieldMetadataId ||
           effectiveCanRead !== current.canReadObjectRecords ||
           effectiveCanUpdate !== current.canUpdateObjectRecords ||
           effectiveCanSoftDelete !== current.canSoftDeleteObjectRecords ||
@@ -178,6 +206,7 @@ export class ObjectPermissionService {
             canUpdateObjectRecords: effectiveCanUpdate,
             canSoftDeleteObjectRecords: effectiveCanSoftDelete,
             canDestroyObjectRecords: effectiveCanDestroy,
+            ownerFieldMetadataId: effectiveOwnerFieldMetadataId,
             createdAt: current.createdAt,
             updatedAt: now,
           });
@@ -198,6 +227,7 @@ export class ObjectPermissionService {
           canUpdateObjectRecords: current.canUpdateObjectRecords,
           canSoftDeleteObjectRecords: current.canSoftDeleteObjectRecords,
           canDestroyObjectRecords: current.canDestroyObjectRecords,
+          ownerFieldMetadataId: current.ownerFieldMetadataId,
           createdAt: current.createdAt,
           updatedAt: current.updatedAt,
         });
@@ -261,6 +291,62 @@ export class ObjectPermissionService {
     );
 
     return filtered;
+  }
+
+  // An owner field must be a MANY_TO_ONE relation to workspaceMember on this
+  // very object, otherwise it cannot be compared to the current member.
+  private validateOwnerFieldMetadataOrThrow({
+    ownerFieldMetadataId,
+    objectMetadataId,
+    flatFieldMetadataMaps,
+    flatObjectMetadataMaps,
+  }: {
+    ownerFieldMetadataId: string;
+    objectMetadataId: string;
+  } & Pick<
+    AllFlatEntityMaps,
+    'flatFieldMetadataMaps' | 'flatObjectMetadataMaps'
+  >): void {
+    const ownerFieldMetadata = findFlatEntityByIdInFlatEntityMaps({
+      flatEntityId: ownerFieldMetadataId,
+      flatEntityMaps: flatFieldMetadataMaps,
+    });
+
+    if (!isDefined(ownerFieldMetadata)) {
+      throw new PermissionsException(
+        PermissionsExceptionMessage.FIELD_METADATA_NOT_FOUND,
+        PermissionsExceptionCode.FIELD_METADATA_NOT_FOUND,
+        {
+          userFriendlyMessage: msg`The owner field you selected could not be found. It may have been deleted.`,
+        },
+      );
+    }
+
+    const workspaceMemberObjectMetadataId = Object.values(
+      flatObjectMetadataMaps.byUniversalIdentifier,
+    ).find(
+      (flatObjectMetadata) =>
+        flatObjectMetadata?.nameSingular ===
+        CoreObjectNameSingular.WorkspaceMember,
+    )?.id;
+
+    const isValidOwnerField =
+      ownerFieldMetadata.objectMetadataId === objectMetadataId &&
+      ownerFieldMetadata.type === FieldMetadataType.RELATION &&
+      ownerFieldMetadata.settings?.relationType === RelationType.MANY_TO_ONE &&
+      isDefined(workspaceMemberObjectMetadataId) &&
+      ownerFieldMetadata.relationTargetObjectMetadataId ===
+        workspaceMemberObjectMetadataId;
+
+    if (!isValidOwnerField) {
+      throw new PermissionsException(
+        'Owner field must be a many-to-one relation to workspace member on this object',
+        PermissionsExceptionCode.INVALID_ARG,
+        {
+          userFriendlyMessage: msg`The owner field must be a relation pointing to a workspace member on this object.`,
+        },
+      );
+    }
   }
 
   private validateObjectPermissionsReadAndWriteConsistencyOrThrow({

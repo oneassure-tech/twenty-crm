@@ -49,6 +49,7 @@ export const SettingsRoleCreateEffect = ({
       canUpdateAllObjectRecords: true,
       canSoftDeleteAllObjectRecords: true,
       canDestroyAllObjectRecords: true,
+      canOnlyAccessOwnedObjectRecords: false,
       canBeAssignedToUsers: true,
       canBeAssignedToAgents: true,
       canBeAssignedToApiKeys: true,

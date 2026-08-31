@@ -51,4 +51,11 @@ export class ObjectPermissionInput {
   @IsOptional()
   @Field({ nullable: true })
   canDestroyObjectRecords?: boolean;
+
+  // MANY_TO_ONE relation field to workspaceMember that designates record
+  // ownership. Only meaningful when the role restricts access to owned records.
+  @IsUUID()
+  @IsOptional()
+  @Field(() => UUIDScalarType, { nullable: true })
+  ownerFieldMetadataId?: string | null;
 }

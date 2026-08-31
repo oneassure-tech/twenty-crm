@@ -9,6 +9,10 @@ export const OBJECT_PERMISSION_FRAGMENT = gql`
     canUpdateObjectRecords
     canSoftDeleteObjectRecords
     canDestroyObjectRecords
+    ownerFieldMetadataId
+    ownedRecordsRestriction {
+      ownerColumnName
+    }
     restrictedFields
     rowLevelPermissionPredicates {
       ...RowLevelPermissionPredicateFragment

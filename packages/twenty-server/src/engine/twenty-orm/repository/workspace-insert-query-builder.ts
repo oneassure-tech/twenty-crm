@@ -32,6 +32,7 @@ import { formatData } from 'src/engine/twenty-orm/utils/format-data.util';
 import { formatResult } from 'src/engine/twenty-orm/utils/format-result.util';
 import { formatTwentyOrmEventToDatabaseBatchEvent } from 'src/engine/twenty-orm/utils/format-twenty-orm-event-to-database-batch-event.util';
 import { getObjectMetadataFromEntityTarget } from 'src/engine/twenty-orm/utils/get-object-metadata-from-entity-target.util';
+import { validateOwnedRecordsRestriction } from 'src/engine/twenty-orm/utils/validate-owned-records-restriction.util';
 import { validateRLSPredicatesForRecords } from 'src/engine/twenty-orm/utils/validate-rls-predicates-for-records.util';
 
 export class WorkspaceInsertQueryBuilder<
@@ -340,6 +341,14 @@ export class WorkspaceInsertQueryBuilder<
       records: valuesToInsertFormatted,
       objectMetadata,
       internalContext: this.internalContext,
+      authContext: this.authContext,
+      shouldBypassPermissionChecks: this.shouldBypassPermissionChecks,
+    });
+
+    validateOwnedRecordsRestriction({
+      records: valuesToInsertFormatted,
+      objectMetadata,
+      objectRecordsPermissions: this.objectRecordsPermissions,
       authContext: this.authContext,
       shouldBypassPermissionChecks: this.shouldBypassPermissionChecks,
     });

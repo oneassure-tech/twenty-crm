@@ -33,6 +33,7 @@ const ROLE_BASIC_KEYS: Array<keyof Role> = [
   'canUpdateAllObjectRecords',
   'canSoftDeleteAllObjectRecords',
   'canDestroyAllObjectRecords',
+  'canOnlyAccessOwnedObjectRecords',
   'canBeAssignedToUsers',
   'canBeAssignedToAgents',
   'canBeAssignedToApiKeys',
@@ -141,6 +142,8 @@ export const useSaveDraftRoleToDB = ({
             settingsDraftRole.canSoftDeleteAllObjectRecords,
           canDestroyAllObjectRecords:
             settingsDraftRole.canDestroyAllObjectRecords,
+          canOnlyAccessOwnedObjectRecords:
+            settingsDraftRole.canOnlyAccessOwnedObjectRecords,
           canBeAssignedToUsers: settingsDraftRole.canBeAssignedToUsers,
           canBeAssignedToAgents: settingsDraftRole.canBeAssignedToAgents,
           canBeAssignedToApiKeys: settingsDraftRole.canBeAssignedToApiKeys,
@@ -198,6 +201,8 @@ export const useSaveDraftRoleToDB = ({
                 settingsDraftRole.canSoftDeleteAllObjectRecords,
               canDestroyAllObjectRecords:
                 settingsDraftRole.canDestroyAllObjectRecords,
+              canOnlyAccessOwnedObjectRecords:
+                settingsDraftRole.canOnlyAccessOwnedObjectRecords,
               canBeAssignedToUsers: settingsDraftRole.canBeAssignedToUsers,
               canBeAssignedToAgents: settingsDraftRole.canBeAssignedToAgents,
               canBeAssignedToApiKeys: settingsDraftRole.canBeAssignedToApiKeys,
@@ -222,6 +227,7 @@ export const useSaveDraftRoleToDB = ({
                   objectPermission.canSoftDeleteObjectRecords,
                 canDestroyObjectRecords:
                   objectPermission.canDestroyObjectRecords,
+                ownerFieldMetadataId: objectPermission.ownerFieldMetadataId,
               })) ?? [],
           },
         },
@@ -390,6 +396,7 @@ export const useSaveDraftRoleToDB = ({
                   objectPermission.canSoftDeleteObjectRecords,
                 canDestroyObjectRecords:
                   objectPermission.canDestroyObjectRecords,
+                ownerFieldMetadataId: objectPermission.ownerFieldMetadataId,
               })) ?? [],
           },
         },

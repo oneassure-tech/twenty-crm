@@ -7,6 +7,7 @@ import {
 } from 'twenty-shared/constants';
 import { STANDARD_OBJECTS } from 'twenty-shared/metadata';
 import {
+  FieldMetadataType,
   type ObjectsPermissions,
   type ObjectsPermissionsByRoleId,
   type RestrictedFieldsPermissions,
@@ -16,11 +17,16 @@ import { IsNull, Repository } from 'typeorm';
 
 import { WorkspaceCacheProvider } from 'src/engine/workspace-cache/interfaces/workspace-cache-provider.service';
 
+import { FieldMetadataEntity } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
 import { ObjectMetadataEntity } from 'src/engine/metadata-modules/object-metadata/object-metadata.entity';
 import { FieldPermissionEntity } from 'src/engine/metadata-modules/object-permission/field-permission/field-permission.entity';
 import { ObjectPermissionEntity } from 'src/engine/metadata-modules/object-permission/object-permission.entity';
 import { RolePermissionFlagEntity } from 'src/engine/metadata-modules/role-permission-flag/role-permission-flag.entity';
 import { RoleEntity } from 'src/engine/metadata-modules/role/role.entity';
+import {
+  resolveOwnerColumnName,
+  type OwnerFieldCandidate,
+} from 'src/engine/metadata-modules/role/utils/resolve-owner-column-name.util';
 import { RowLevelPermissionPredicateGroupEntity } from 'src/engine/metadata-modules/row-level-permission-predicate/entities/row-level-permission-predicate-group.entity';
 import { RowLevelPermissionPredicateEntity } from 'src/engine/metadata-modules/row-level-permission-predicate/entities/row-level-permission-predicate.entity';
 import { InjectWorkspaceScopedRepository } from 'src/engine/twenty-orm/workspace-scoped-repository/inject-workspace-scoped-repository.decorator';
@@ -42,6 +48,8 @@ export class WorkspaceRolesPermissionsCacheService extends WorkspaceCacheProvide
   constructor(
     @InjectRepository(ObjectMetadataEntity)
     private readonly objectMetadataRepository: Repository<ObjectMetadataEntity>,
+    @InjectRepository(FieldMetadataEntity)
+    private readonly fieldMetadataRepository: Repository<FieldMetadataEntity>,
     @InjectWorkspaceScopedRepository(RoleEntity)
     private readonly roleRepository: WorkspaceScopedRepository<RoleEntity>,
     @InjectWorkspaceScopedRepository(ObjectPermissionEntity)
@@ -69,6 +77,7 @@ export class WorkspaceRolesPermissionsCacheService extends WorkspaceCacheProvide
       rowLevelPermissionPredicates,
       rowLevelPermissionPredicateGroups,
       workspaceObjectMetadataCollection,
+      ownerFieldCandidates,
     ] = await Promise.all([
       this.roleRepository.find(workspaceId),
       this.objectPermissionRepository.find(workspaceId),
@@ -84,7 +93,22 @@ export class WorkspaceRolesPermissionsCacheService extends WorkspaceCacheProvide
         where: { deletedAt: IsNull() },
       }),
       this.getWorkspaceObjectMetadataCollection(workspaceId),
+      this.getOwnerFieldCandidates(workspaceId),
     ]);
+
+    const ownerFieldCandidateById = new Map(
+      ownerFieldCandidates.map((fieldMetadata) => [
+        fieldMetadata.id,
+        fieldMetadata,
+      ]),
+    );
+
+    const workspaceMemberObjectMetadataId =
+      workspaceObjectMetadataCollection.find(
+        (objectMetadata) =>
+          objectMetadata.universalIdentifier ===
+          WORKSPACE_MEMBER_OBJECT_UNIVERSAL_IDENTIFIER,
+      )?.id;
 
     const objectPermissionsByRoleId =
       regroupEntitiesByRelatedEntityId<'objectPermission'>({
@@ -225,7 +249,24 @@ export class WorkspaceRolesPermissionsCacheService extends WorkspaceCacheProvide
           }
         }
 
+        // Resolved once per cache build so the query builders only ever read a
+        // plain column name. Null leaves the object unrestricted.
+        const ownerColumnName = role.canOnlyAccessOwnedObjectRecords
+          ? resolveOwnerColumnName({
+              ownerFieldMetadataId: roleObjectPermissions.find(
+                (objectPermission) =>
+                  objectPermission.objectMetadataId === objectMetadataId,
+              )?.ownerFieldMetadataId,
+              objectMetadataId,
+              workspaceMemberObjectMetadataId,
+              fieldMetadataById: ownerFieldCandidateById,
+            })
+          : null;
+
         objectRecordsPermissions[objectMetadataId] = {
+          ownedRecordsRestriction: isDefined(ownerColumnName)
+            ? { ownerColumnName }
+            : null,
           canReadObjectRecords: canRead,
           canUpdateObjectRecords: canUpdate,
           canSoftDeleteObjectRecords: canSoftDelete,
@@ -248,6 +289,26 @@ export class WorkspaceRolesPermissionsCacheService extends WorkspaceCacheProvide
     }
 
     return permissionsByRoleId;
+  }
+
+  // Only MANY_TO_ONE relation fields can designate ownership, so the candidate
+  // set is narrow enough to load wholesale.
+  private async getOwnerFieldCandidates(
+    workspaceId: string,
+  ): Promise<OwnerFieldCandidate[]> {
+    return this.fieldMetadataRepository.find({
+      where: {
+        workspaceId,
+        type: FieldMetadataType.RELATION,
+      },
+      select: [
+        'id',
+        'type',
+        'objectMetadataId',
+        'relationTargetObjectMetadataId',
+        'settings',
+      ],
+    }) as Promise<OwnerFieldCandidate[]>;
   }
 
   private async getWorkspaceObjectMetadataCollection(

@@ -1,5 +1,6 @@
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { getLabelIdentifierFieldMetadataItem } from '@/object-metadata/utils/getLabelIdentifierFieldMetadataItem';
+import { useBuildRecordInputFromOwnedRecordsRestriction } from '@/object-record/hooks/useBuildRecordInputFromOwnedRecordsRestriction';
 import { useBuildRecordInputFromRLSPredicates } from '@/object-record/hooks/useBuildRecordInputFromRLSPredicates';
 import { useCreateOneRecord } from '@/object-record/hooks/useCreateOneRecord';
 import { recordGroupDefinitionsComponentSelector } from '@/object-record/record-group/states/selectors/recordGroupDefinitionsComponentSelector';
@@ -73,6 +74,11 @@ export const useCreateNewIndexRecord = ({
       objectMetadataItem,
     });
 
+  const { buildRecordInputFromOwnedRecordsRestriction } =
+    useBuildRecordInputFromOwnedRecordsRestriction({
+      objectMetadataItem,
+    });
+
   const createNewIndexRecord = useCallback(
     async (recordInput?: Partial<ObjectRecord>) => {
       const recordId = v4();
@@ -80,6 +86,7 @@ export const useCreateNewIndexRecord = ({
       const recordInputFromFilters = buildRecordInputFromFilters();
 
       const mergedRecordInput = {
+        ...buildRecordInputFromOwnedRecordsRestriction(),
         ...recordInputFromRLSPredicates,
         ...recordInputFromFilters,
         ...recordInput,

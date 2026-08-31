@@ -59,6 +59,16 @@ export class ObjectPermissionEntity extends SyncableEntity {
   @Column({ nullable: true, type: 'boolean' })
   canDestroyObjectRecords?: boolean;
 
+  // Field metadata id of the MANY_TO_ONE relation to workspaceMember that
+  // designates record ownership. Only read when the role has
+  // canOnlyAccessOwnedObjectRecords set; null leaves this object unrestricted.
+  //
+  // Held as a plain uuid rather than a relation: registering a new many-to-one
+  // here would require threading it through the metadata migration engine, and
+  // a dangling id already resolves to "unrestricted" in resolveOwnerColumnName.
+  @Column({ nullable: true, type: 'uuid' })
+  ownerFieldMetadataId?: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
