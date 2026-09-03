@@ -99,6 +99,7 @@ const buildSyntheticRole = (
   canDestroyAllObjectRecords: defaultRole.canDestroyAllObjectRecords ?? false,
   canUpdateAllSettings: defaultRole.canUpdateAllSettings ?? false,
   canAccessAllTools: defaultRole.canAccessAllTools ?? false,
+  recordVisibilitySettings: {},
   canBeAssignedToUsers: false,
   canBeAssignedToAgents: false,
   canBeAssignedToApiKeys: false,

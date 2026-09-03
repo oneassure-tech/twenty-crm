@@ -36,6 +36,7 @@ const ROLE_BASIC_KEYS: Array<keyof Role> = [
   'canBeAssignedToUsers',
   'canBeAssignedToAgents',
   'canBeAssignedToApiKeys',
+  'recordVisibilitySettings',
 ];
 
 export const useSaveDraftRoleToDB = ({

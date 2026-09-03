@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import { type QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
+
 import { WorkspaceMigrationRunnerActionHandler } from 'src/engine/workspace-manager/workspace-migration/workspace-migration-runner/interfaces/workspace-migration-runner-action-handler-service.interface';
 
 import { findFlatEntityByUniversalIdentifierOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-universal-identifier-or-throw.util';
@@ -52,7 +54,12 @@ export class UpdateRoleActionHandlerService extends WorkspaceMigrationRunnerActi
     const roleRepository =
       queryRunner.manager.getRepository<RoleEntity>(RoleEntity);
 
-    await roleRepository.update({ id: entityId, workspaceId }, update);
+    // recordVisibilitySettings is a jsonb column, which TypeORM's
+    // QueryDeepPartialEntity tries to treat as a nested partial.
+    await roleRepository.update(
+      { id: entityId, workspaceId },
+      update as QueryDeepPartialEntity<RoleEntity>,
+    );
   }
 
   async executeForWorkspaceSchema(

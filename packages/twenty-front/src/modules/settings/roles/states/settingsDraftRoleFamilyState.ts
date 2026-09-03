@@ -18,6 +18,7 @@ export const settingsDraftRoleFamilyState = createAtomFamilyState<
     canUpdateAllObjectRecords: false,
     canUpdateAllSettings: false,
     canAccessAllTools: false,
+    recordVisibilitySettings: {},
     isEditable: false,
     workspaceMembers: [],
     permissionFlags: [],

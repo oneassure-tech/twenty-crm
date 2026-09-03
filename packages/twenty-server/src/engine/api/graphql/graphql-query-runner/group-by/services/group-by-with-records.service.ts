@@ -24,6 +24,7 @@ import { type FlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/typ
 import { type FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
 import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object-metadata/types/flat-object-metadata.type';
 import { type WorkspaceSelectQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-select-query-builder';
+import { applyRecordVisibilityRules } from 'src/engine/twenty-orm/record-visibility/utils/apply-record-visibility-rules.util';
 import { applyRowLevelPermissionPredicates } from 'src/engine/twenty-orm/utils/apply-row-level-permission-predicates.util';
 import { type WorkspaceRepository } from 'src/engine/twenty-orm/repository/workspace.repository';
 
@@ -92,6 +93,15 @@ export class GroupByWithRecordsService {
       internalContext: queryBuilderWithFiltersAndWithoutGroupBy.internalContext,
       authContext: queryBuilderWithFiltersAndWithoutGroupBy.authContext,
       featureFlagMap: queryBuilderWithFiltersAndWithoutGroupBy.featureFlagMap,
+    });
+
+    // This builder is embedded as a PARTITION BY subquery, and the automatic
+    // path in the select builder skips subqueries - so apply rules explicitly.
+    applyRecordVisibilityRules({
+      queryBuilder: queryBuilderWithFiltersAndWithoutGroupBy,
+      objectMetadata: flatObjectMetadata,
+      internalContext: queryBuilderWithFiltersAndWithoutGroupBy.internalContext,
+      authContext: queryBuilderWithFiltersAndWithoutGroupBy.authContext,
     });
 
     const queryBuilderWithPartitionBy = this.addPartitionByToQueryBuilder({

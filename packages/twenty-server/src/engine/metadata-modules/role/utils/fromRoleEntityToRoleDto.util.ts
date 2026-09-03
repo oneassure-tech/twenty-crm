@@ -20,6 +20,7 @@ export const fromRoleEntityToRoleDto = (role: RoleEntity): RoleDTO => {
     canBeAssignedToUsers: role.canBeAssignedToUsers,
     canBeAssignedToAgents: role.canBeAssignedToAgents,
     canBeAssignedToApiKeys: role.canBeAssignedToApiKeys,
+    recordVisibilitySettings: role.recordVisibilitySettings ?? {},
     roleTargets: role.roleTargets,
     permissionFlags: role.rolePermissionFlags?.map((rolePermissionFlag) => ({
       id: rolePermissionFlag.id,

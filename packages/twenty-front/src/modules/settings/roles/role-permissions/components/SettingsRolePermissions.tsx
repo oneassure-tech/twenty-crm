@@ -1,6 +1,7 @@
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { SettingsRolePermissionsObjectLevelSection } from '@/settings/roles/role-permissions/object-level-permissions/components/SettingsRolePermissionsObjectLevelSection';
 import { SettingsRolePermissionsObjectsSection } from '@/settings/roles/role-permissions/objects-permissions/components/SettingsRolePermissionsObjectsSection';
+import { SettingsRolePermissionsRecordVisibilitySection } from '@/settings/roles/role-permissions/record-visibility/components/SettingsRolePermissionsRecordVisibilitySection';
 import { SettingsRolePermissionsSettingsSection } from '@/settings/roles/role-permissions/permission-flags/components/SettingsRolePermissionsSettingsSection';
 import { SettingsRolePermissionsToolSection } from '@/settings/roles/role-permissions/permission-flags/components/SettingsRolePermissionsToolSection';
 import { styled } from '@linaria/react';
@@ -28,6 +29,10 @@ export const SettingsRolePermissions = ({
   return (
     <StyledRolePermissionsContainer>
       <SettingsRolePermissionsObjectsSection
+        roleId={roleId}
+        isEditable={isEditable}
+      />
+      <SettingsRolePermissionsRecordVisibilitySection
         roleId={roleId}
         isEditable={isEditable}
       />

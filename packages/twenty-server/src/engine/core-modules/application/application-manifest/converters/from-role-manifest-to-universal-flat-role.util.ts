@@ -29,6 +29,7 @@ export const fromRoleManifestToUniversalFlatRole = ({
     canBeAssignedToUsers: roleManifest.canBeAssignedToUsers ?? true,
     canBeAssignedToAgents: roleManifest.canBeAssignedToAgents ?? true,
     canBeAssignedToApiKeys: roleManifest.canBeAssignedToApiKeys ?? true,
+    recordVisibilitySettings: {},
     roleTargetUniversalIdentifiers: [],
     objectPermissionUniversalIdentifiers: [],
     fieldPermissionUniversalIdentifiers: [],
