@@ -13,7 +13,7 @@ export const useRecordVisibilityRuleConfig =
         {
           key: RecordVisibilityRuleKey.OWN_RECORDS_ONLY,
           name: t`Only own records`,
-          description: t`Members see only records where they are the Owner. Applies to every object with an Owner field.`,
+          description: t`Only see and edit records they own`,
           Icon: IconUserCircle,
         },
       ],

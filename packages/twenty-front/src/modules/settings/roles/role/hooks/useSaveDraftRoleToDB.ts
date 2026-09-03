@@ -145,6 +145,7 @@ export const useSaveDraftRoleToDB = ({
           canBeAssignedToUsers: settingsDraftRole.canBeAssignedToUsers,
           canBeAssignedToAgents: settingsDraftRole.canBeAssignedToAgents,
           canBeAssignedToApiKeys: settingsDraftRole.canBeAssignedToApiKeys,
+          recordVisibilitySettings: settingsDraftRole.recordVisibilitySettings,
         } satisfies Partial<Role>,
       },
       refetchQueries: [getOperationName(GET_ROLES) ?? ''],
@@ -202,6 +203,8 @@ export const useSaveDraftRoleToDB = ({
               canBeAssignedToUsers: settingsDraftRole.canBeAssignedToUsers,
               canBeAssignedToAgents: settingsDraftRole.canBeAssignedToAgents,
               canBeAssignedToApiKeys: settingsDraftRole.canBeAssignedToApiKeys,
+              recordVisibilitySettings:
+                settingsDraftRole.recordVisibilitySettings,
             },
           },
         },
