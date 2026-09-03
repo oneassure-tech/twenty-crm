@@ -55,6 +55,7 @@ export const BASE_FIELD_PERMISSION_OBJECT_METADATA_3: Omit<
 
 export const BASE_ROLE_MOCK_GRANTS_ALL: Role = {
   canAccessAllTools: false,
+  recordVisibilitySettings: {},
   canReadAllObjectRecords: true,
   canUpdateAllObjectRecords: true,
   canSoftDeleteAllObjectRecords: true,
@@ -87,6 +88,7 @@ export const BASE_ROLE_MOCK_GRANTS_ALL: Role = {
 
 export const BASE_ROLE_MOCK_REVOKES_ALL: Role = {
   canAccessAllTools: false,
+  recordVisibilitySettings: {},
   canReadAllObjectRecords: false,
   canUpdateAllObjectRecords: false,
   canSoftDeleteAllObjectRecords: false,

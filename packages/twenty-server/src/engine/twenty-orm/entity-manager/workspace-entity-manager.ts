@@ -105,6 +105,7 @@ export class WorkspaceEntityManager extends EntityManager {
       flatObjectMetadataMaps: context.flatObjectMetadataMaps,
       flatFieldMetadataMaps: context.flatFieldMetadataMaps,
       flatIndexMaps: context.flatIndexMaps,
+      flatRoleMaps: context.flatRoleMaps,
       flatRowLevelPermissionPredicateMaps:
         context.flatRowLevelPermissionPredicateMaps,
       flatRowLevelPermissionPredicateGroupMaps:

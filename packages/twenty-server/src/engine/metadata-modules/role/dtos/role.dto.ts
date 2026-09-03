@@ -1,5 +1,7 @@
 import { Field, HideField, ObjectType } from '@nestjs/graphql';
 
+import GraphQLJSON from 'graphql-type-json';
+import { type RoleRecordVisibilitySettings } from 'twenty-shared/types';
 import { Relation } from 'typeorm';
 
 import { UUIDScalarType } from 'src/engine/api/graphql/workspace-schema-builder/graphql-types/scalars';
@@ -85,6 +87,9 @@ export class RoleDTO {
 
   @Field({ nullable: false })
   canDestroyAllObjectRecords: boolean;
+
+  @Field(() => GraphQLJSON, { nullable: false })
+  recordVisibilitySettings: RoleRecordVisibilitySettings;
 
   @Field(() => [RolePermissionFlagDTO], { nullable: true })
   permissionFlags?: RolePermissionFlagDTO[];

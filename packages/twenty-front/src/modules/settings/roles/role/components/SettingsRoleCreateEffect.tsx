@@ -45,6 +45,7 @@ export const SettingsRoleCreateEffect = ({
       icon: 'IconUser',
       canUpdateAllSettings: true,
       canAccessAllTools: true,
+      recordVisibilitySettings: {},
       canReadAllObjectRecords: true,
       canUpdateAllObjectRecords: true,
       canSoftDeleteAllObjectRecords: true,

@@ -29,6 +29,7 @@ import { type FlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/typ
 import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
 import { type FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
 import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object-metadata/types/flat-object-metadata.type';
+import { type FlatRole } from 'src/engine/metadata-modules/flat-role/types/flat-role.type';
 import { UserWorkspaceRoleMap } from 'src/engine/metadata-modules/role-target/types/user-workspace-role-map';
 import { type FlatRowLevelPermissionPredicateGroupMaps } from 'src/engine/metadata-modules/row-level-permission-predicate/types/flat-row-level-permission-predicate-group-maps.type';
 import { type FlatRowLevelPermissionPredicateMaps } from 'src/engine/metadata-modules/row-level-permission-predicate/types/flat-row-level-permission-predicate-maps.type';
@@ -41,6 +42,9 @@ import {
 import { type EventStreamPayload } from 'src/engine/subscriptions/types/event-stream-payload.type';
 import { ObjectRecordSubscriptionEvent } from 'src/engine/subscriptions/types/object-record-subscription-event.type';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
+import { type RecordVisibilityPredicate } from 'src/engine/twenty-orm/record-visibility/types/record-visibility-predicate.type';
+import { doesRecordMatchVisibilityPredicate } from 'src/engine/twenty-orm/record-visibility/utils/does-record-match-visibility-predicate.util';
+import { resolveRecordVisibilityPredicate } from 'src/engine/twenty-orm/record-visibility/utils/resolve-record-visibility-predicate.util';
 import { RolePermissionConfig } from 'src/engine/twenty-orm/types/role-permission-config';
 import { buildRowLevelPermissionRecordFilter } from 'src/engine/twenty-orm/utils/build-row-level-permission-record-filter.util';
 import { isRecordMatchingRLSRowLevelPermissionPredicate } from 'src/engine/twenty-orm/utils/is-record-matching-rls-row-level-permission-predicate.util';
@@ -133,6 +137,8 @@ export class ObjectRecordEventPublisher {
       flatRowLevelPermissionPredicateMaps: FlatRowLevelPermissionPredicateMaps;
       flatRowLevelPermissionPredicateGroupMaps: FlatRowLevelPermissionPredicateGroupMaps;
       flatFieldMetadataMaps: FlatEntityMaps<FlatFieldMetadata>;
+      flatObjectMetadataMaps: FlatEntityMaps<FlatObjectMetadata>;
+      flatRoleMaps: FlatEntityMaps<FlatRole>;
       userWorkspaceRoleMap: Record<string, string>;
       rolesPermissions: ObjectsPermissionsByRoleId;
     };
@@ -176,6 +182,21 @@ export class ObjectRecordEventPublisher {
 
     const restrictedFields = objectPermissions.restrictedFields;
 
+    // Record-visibility rules are enforced in the ORM for queries; subscriptions
+    // never touch the ORM, so the same rules are re-evaluated in memory here.
+    const recordVisibility = resolveRecordVisibilityPredicate({
+      roleId,
+      flatRoleMaps: permissionsContext.flatRoleMaps,
+      objectMetadata: workspaceEventBatch.objectMetadata,
+      flatObjectMetadataMaps: permissionsContext.flatObjectMetadataMaps,
+      flatFieldMetadataMaps: permissionsContext.flatFieldMetadataMaps,
+      workspaceMemberId: streamData.authContext.workspaceMemberId ?? undefined,
+    });
+
+    if (recordVisibility.kind === 'denyAll') {
+      return;
+    }
+
     for (const event of workspaceEventBatch.events) {
       const { action } = parseEventNameOrThrow(workspaceEventBatch.name);
 
@@ -198,6 +219,13 @@ export class ObjectRecordEventPublisher {
       if (
         isDefined(filteredProperties.updatedFields) &&
         filteredProperties.updatedFields.length === 0
+      ) {
+        continue;
+      }
+
+      if (
+        recordVisibility.kind === 'predicate' &&
+        !this.isEventRecordVisible(filteredEvent, recordVisibility.predicate)
       ) {
         continue;
       }
@@ -271,6 +299,8 @@ export class ObjectRecordEventPublisher {
       flatRowLevelPermissionPredicateMaps: FlatRowLevelPermissionPredicateMaps;
       flatRowLevelPermissionPredicateGroupMaps: FlatRowLevelPermissionPredicateGroupMaps;
       flatFieldMetadataMaps: FlatEntityMaps<FlatFieldMetadata>;
+      flatObjectMetadataMaps: FlatEntityMaps<FlatObjectMetadata>;
+      flatRoleMaps: FlatEntityMaps<FlatRole>;
       userWorkspaceRoleMap: UserWorkspaceRoleMap;
       rolesPermissions: ObjectsPermissionsByRoleId;
     };
@@ -343,6 +373,27 @@ export class ObjectRecordEventPublisher {
         FindOptionsRelations<ObjectLiteral>
       >,
       selectedFields: selectedFieldsResult.select,
+    });
+  }
+
+  private isEventRecordVisible(
+    event: ObjectRecordSubscriptionEvent,
+    predicate: RecordVisibilityPredicate,
+  ): boolean {
+    const properties = event.properties as {
+      after?: object;
+      before?: object;
+    };
+
+    const record = properties?.after ?? properties?.before;
+
+    if (!isDefined(record)) {
+      return false;
+    }
+
+    return doesRecordMatchVisibilityPredicate({
+      record: record as Record<string, unknown>,
+      predicate,
     });
   }
 
@@ -522,6 +573,8 @@ export class ObjectRecordEventPublisher {
     flatRowLevelPermissionPredicateMaps: FlatRowLevelPermissionPredicateMaps;
     flatRowLevelPermissionPredicateGroupMaps: FlatRowLevelPermissionPredicateGroupMaps;
     flatFieldMetadataMaps: FlatEntityMaps<FlatFieldMetadata>;
+    flatObjectMetadataMaps: FlatEntityMaps<FlatObjectMetadata>;
+    flatRoleMaps: FlatEntityMaps<FlatRole>;
     userWorkspaceRoleMap: Record<string, string>;
     rolesPermissions: ObjectsPermissionsByRoleId;
   }> {
@@ -529,12 +582,16 @@ export class ObjectRecordEventPublisher {
       flatRowLevelPermissionPredicateMaps,
       flatRowLevelPermissionPredicateGroupMaps,
       flatFieldMetadataMaps,
+      flatObjectMetadataMaps,
+      flatRoleMaps,
       userWorkspaceRoleMap,
       rolesPermissions,
     } = await this.workspaceCacheService.getOrRecompute(workspaceId, [
       'flatRowLevelPermissionPredicateMaps',
       'flatRowLevelPermissionPredicateGroupMaps',
       'flatFieldMetadataMaps',
+      'flatObjectMetadataMaps',
+      'flatRoleMaps',
       'userWorkspaceRoleMap',
       'rolesPermissions',
     ]);
@@ -543,6 +600,8 @@ export class ObjectRecordEventPublisher {
       flatRowLevelPermissionPredicateMaps,
       flatRowLevelPermissionPredicateGroupMaps,
       flatFieldMetadataMaps,
+      flatObjectMetadataMaps,
+      flatRoleMaps,
       userWorkspaceRoleMap,
       rolesPermissions,
     };

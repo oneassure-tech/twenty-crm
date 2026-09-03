@@ -1,5 +1,8 @@
 import { Field, InputType } from '@nestjs/graphql';
 
+import GraphQLJSON from 'graphql-type-json';
+import { type RoleRecordVisibilitySettings } from 'twenty-shared/types';
+
 import {
   IsBoolean,
   IsNotEmpty,
@@ -71,6 +74,10 @@ export class UpdateRolePayload {
   @IsOptional()
   @Field({ nullable: true })
   canBeAssignedToApiKeys?: boolean;
+
+  @IsOptional()
+  @Field(() => GraphQLJSON, { nullable: true })
+  recordVisibilitySettings?: RoleRecordVisibilitySettings;
 }
 
 @InputType()
