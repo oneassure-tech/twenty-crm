@@ -2,24 +2,22 @@ import { type SettingsRoleRecordVisibilityRule } from '@/settings/roles/role-per
 import { TableCell } from '@/ui/layout/table/components/TableCell';
 import { TableRow } from '@/ui/layout/table/components/TableRow';
 import { styled } from '@linaria/react';
+import { useContext } from 'react';
 import { Checkbox } from 'twenty-ui/input';
-import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
 
-const StyledRuleContent = styled.div`
+const StyledName = styled.span`
+  color: ${themeCssVariables.font.color.primary};
+`;
+
+const StyledDescription = styled.span`
+  color: ${themeCssVariables.font.color.secondary};
+`;
+
+const StyledIconContainer = styled.div`
   align-items: center;
   display: flex;
-  gap: ${themeCssVariables.spacing[2]};
-`;
-
-const StyledRuleName = styled.span`
-  color: ${themeCssVariables.font.color.primary};
-  white-space: nowrap;
-`;
-
-const StyledRuleDescription = styled.span`
-  color: ${themeCssVariables.font.color.tertiary};
-  overflow: hidden;
-  text-overflow: ellipsis;
+  justify-content: center;
 `;
 
 type SettingsRolePermissionsRecordVisibilityTableRowProps = {
@@ -35,6 +33,7 @@ export const SettingsRolePermissionsRecordVisibilityTableRow = ({
   isEditable,
   onChange,
 }: SettingsRolePermissionsRecordVisibilityTableRowProps) => {
+  const { theme } = useContext(ThemeContext);
   const isDisabled = !isEditable;
 
   const handleRowClick = () => {
@@ -45,15 +44,22 @@ export const SettingsRolePermissionsRecordVisibilityTableRow = ({
 
   return (
     <TableRow
+      gridAutoColumns="3fr 4fr 24px"
       onClick={handleRowClick}
       cursor={isDisabled ? 'default' : 'pointer'}
     >
-      <TableCell gap={themeCssVariables.spacing[1]}>
-        <StyledRuleContent>
-          <rule.Icon size={16} />
-          <StyledRuleName>{rule.name}</StyledRuleName>
-          <StyledRuleDescription>{` · ${rule.description}`}</StyledRuleDescription>
-        </StyledRuleContent>
+      <TableCell gap={themeCssVariables.spacing[2]}>
+        <StyledIconContainer>
+          <rule.Icon
+            size={theme.icon.size.md}
+            color={theme.font.color.primary}
+            stroke={theme.icon.stroke.sm}
+          />
+        </StyledIconContainer>
+        <StyledName>{rule.name}</StyledName>
+      </TableCell>
+      <TableCell gap={themeCssVariables.spacing[2]}>
+        <StyledDescription>{rule.description}</StyledDescription>
       </TableCell>
       <TableCell
         align="right"
@@ -62,8 +68,8 @@ export const SettingsRolePermissionsRecordVisibilityTableRow = ({
       >
         <Checkbox
           checked={value}
-          onChange={() => onChange(!value)}
           disabled={isDisabled}
+          onChange={(event) => onChange(event.target.checked)}
         />
       </TableCell>
     </TableRow>
