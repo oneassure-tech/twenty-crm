@@ -220,6 +220,11 @@ describe('WorkspaceEntityManager', () => {
         universalIdentifierById: {},
         universalIdentifiersByApplicationId: {},
       },
+      flatRoleMaps: {
+        byUniversalIdentifier: {},
+        universalIdentifierById: {},
+        universalIdentifiersByApplicationId: {},
+      },
       flatRowLevelPermissionPredicateMaps: {
         byUniversalIdentifier: {},
         universalIdentifierById: {},
@@ -296,6 +301,7 @@ describe('WorkspaceEntityManager', () => {
       flatObjectMetadataMaps,
       flatFieldMetadataMaps,
       flatIndexMaps: mockInternalContext.flatIndexMaps,
+      flatRoleMaps: mockInternalContext.flatRoleMaps,
       flatRowLevelPermissionPredicateMaps:
         mockInternalContext.flatRowLevelPermissionPredicateMaps,
       flatRowLevelPermissionPredicateGroupMaps:

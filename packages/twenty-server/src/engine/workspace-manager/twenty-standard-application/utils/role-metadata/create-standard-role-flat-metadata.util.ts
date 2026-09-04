@@ -66,6 +66,7 @@ export const createStandardRoleFlatMetadata = ({
     canBeAssignedToUsers,
     canBeAssignedToAgents,
     canBeAssignedToApiKeys,
+    recordVisibilitySettings: {},
     workspaceId,
     applicationId: twentyStandardApplicationId,
     applicationUniversalIdentifier:

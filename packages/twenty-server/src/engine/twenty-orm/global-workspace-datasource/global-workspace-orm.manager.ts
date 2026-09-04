@@ -94,6 +94,7 @@ export class GlobalWorkspaceOrmManager {
       ORMEntityMetadatas: entityMetadatas,
       userWorkspaceRoleMap,
       apiKeyRoleMap,
+      flatRoleMaps,
       flatRowLevelPermissionPredicateMaps,
       flatRowLevelPermissionPredicateGroupMaps,
     } = await this.workspaceCacheService.getOrRecompute(workspaceId, [
@@ -105,6 +106,7 @@ export class GlobalWorkspaceOrmManager {
       'ORMEntityMetadatas',
       'userWorkspaceRoleMap',
       'apiKeyRoleMap',
+      'flatRoleMaps',
       'flatRowLevelPermissionPredicateMaps',
       'flatRowLevelPermissionPredicateGroupMaps',
     ]);
@@ -117,6 +119,7 @@ export class GlobalWorkspaceOrmManager {
       flatObjectMetadataMaps,
       flatFieldMetadataMaps,
       flatIndexMaps,
+      flatRoleMaps,
       flatRowLevelPermissionPredicateMaps,
       flatRowLevelPermissionPredicateGroupMaps,
       objectIdByNameSingular,
@@ -151,6 +154,11 @@ export class GlobalWorkspaceOrmManager {
       flatObjectMetadataMaps,
       flatFieldMetadataMaps,
       flatIndexMaps: {
+        byUniversalIdentifier: {},
+        universalIdentifierById: {},
+        universalIdentifiersByApplicationId: {},
+      },
+      flatRoleMaps: {
         byUniversalIdentifier: {},
         universalIdentifierById: {},
         universalIdentifiersByApplicationId: {},

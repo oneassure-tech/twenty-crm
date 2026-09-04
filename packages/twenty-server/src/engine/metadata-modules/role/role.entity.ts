@@ -1,3 +1,4 @@
+import { type RoleRecordVisibilitySettings } from 'twenty-shared/types';
 import {
   Column,
   CreateDateColumn,
@@ -67,6 +68,11 @@ export class RoleEntity extends SyncableEntity implements Required<RoleEntity> {
 
   @Column({ nullable: false, default: true })
   canBeAssignedToApiKeys: boolean;
+
+  // Record-visibility rules enabled for this role, keyed by RecordVisibilityRuleKey.
+  // Empty object means the role is unrestricted at row level.
+  @Column({ type: 'jsonb', nullable: false, default: () => "'{}'::jsonb" })
+  recordVisibilitySettings: RoleRecordVisibilitySettings;
 
   @OneToMany(
     () => RoleTargetEntity,

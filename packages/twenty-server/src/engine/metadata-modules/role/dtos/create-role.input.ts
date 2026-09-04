@@ -1,6 +1,8 @@
 import { Field, HideField, InputType } from '@nestjs/graphql';
 
 import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
+import GraphQLJSON from 'graphql-type-json';
+import { type RoleRecordVisibilitySettings } from 'twenty-shared/types';
 
 @InputType()
 export class CreateRoleInput {
@@ -70,4 +72,8 @@ export class CreateRoleInput {
   @IsOptional()
   @Field({ nullable: true })
   canBeAssignedToApiKeys?: boolean;
+
+  @IsOptional()
+  @Field(() => GraphQLJSON, { nullable: true })
+  recordVisibilitySettings?: RoleRecordVisibilitySettings;
 }

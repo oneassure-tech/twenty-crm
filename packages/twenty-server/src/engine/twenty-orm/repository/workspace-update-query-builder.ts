@@ -31,6 +31,7 @@ import { validateQueryIsPermittedOrThrow } from 'src/engine/twenty-orm/repositor
 import { type WorkspaceDeleteQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-delete-query-builder';
 import { WorkspaceSelectQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-select-query-builder';
 import { type WorkspaceSoftDeleteQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-soft-delete-query-builder';
+import { applyRecordVisibilityRules } from 'src/engine/twenty-orm/record-visibility/utils/apply-record-visibility-rules.util';
 import { applyRowLevelPermissionPredicates } from 'src/engine/twenty-orm/utils/apply-row-level-permission-predicates.util';
 import { applyTableAliasOnWhereCondition } from 'src/engine/twenty-orm/utils/apply-table-alias-on-where-condition';
 import { computeEventSelectQueryBuilder } from 'src/engine/twenty-orm/utils/compute-event-select-query-builder.util';
@@ -213,6 +214,7 @@ export class WorkspaceUpdateQueryBuilder<
       }
 
       this.applyRowLevelPermissionPredicates();
+      this.applyRecordVisibilityRules();
 
       const valuesSet = this.expressionMap.valuesSet ?? {};
       const updatedRecords: T[] = before.map(
@@ -426,6 +428,7 @@ export class WorkspaceUpdateQueryBuilder<
         this.where({ id: input.criteria });
 
         this.applyRowLevelPermissionPredicates();
+        this.applyRecordVisibilityRules();
 
         const beforeRecord = beforeRecordById.get(input.criteria);
         const updatedRecords = beforeRecord
@@ -637,6 +640,26 @@ export class WorkspaceUpdateQueryBuilder<
       internalContext: this.internalContext,
       authContext: this.authContext,
       featureFlagMap: this.featureFlagMap,
+    });
+  }
+
+  private applyRecordVisibilityRules(): void {
+    if (this.shouldBypassPermissionChecks) {
+      return;
+    }
+
+    const mainAliasTarget = this.getMainAliasTarget();
+
+    const objectMetadata = getObjectMetadataFromEntityTarget(
+      mainAliasTarget,
+      this.internalContext,
+    );
+
+    applyRecordVisibilityRules({
+      queryBuilder: this as unknown as WorkspaceSelectQueryBuilder<T>,
+      objectMetadata,
+      internalContext: this.internalContext,
+      authContext: this.authContext,
     });
   }
 
