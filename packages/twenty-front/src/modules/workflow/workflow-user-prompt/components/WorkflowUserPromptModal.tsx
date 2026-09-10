@@ -1,31 +1,23 @@
 import { ModalStatefulWrapper } from '@/ui/layout/modal/components/ModalStatefulWrapper';
 import { WorkflowUserPromptAnswerForm } from '@/workflow/workflow-user-prompt/components/WorkflowUserPromptAnswerForm';
+import { WorkflowUserPromptModalFooter } from '@/workflow/workflow-user-prompt/components/WorkflowUserPromptModalFooter';
 import { WORKFLOW_USER_PROMPT_MODAL_ID } from '@/workflow/workflow-user-prompt/constants/WorkflowUserPromptModalId';
+import { useSkipUserPrompt } from '@/workflow/workflow-user-prompt/hooks/useSkipUserPrompt';
 import { useSubmitUserPrompt } from '@/workflow/workflow-user-prompt/hooks/useSubmitUserPrompt';
 import { useUserPromptAnswer } from '@/workflow/workflow-user-prompt/hooks/useUserPromptAnswer';
 import { type PendingUserPrompt } from '@/workflow/workflow-user-prompt/types/PendingUserPrompt';
-import { styled } from '@linaria/react';
-import { useLingui } from '@lingui/react/macro';
-import { Button } from 'twenty-ui/input';
-import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 export type WorkflowUserPromptModalProps = {
   prompt: PendingUserPrompt;
   onAnswered: () => void;
 };
 
-const StyledFooter = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  margin-top: ${themeCssVariables.spacing[6]};
-`;
-
 export const WorkflowUserPromptModal = ({
   prompt,
   onAnswered,
 }: WorkflowUserPromptModalProps) => {
-  const { t } = useLingui();
   const { submitUserPrompt, isSubmittingUserPrompt } = useSubmitUserPrompt();
+  const { skipUserPrompt, isSkippingUserPrompt } = useSkipUserPrompt();
 
   const {
     selectedOptionId,
@@ -50,10 +42,22 @@ export const WorkflowUserPromptModal = ({
     },
   });
 
+  const close = async () => {
+    const isSuccess = await skipUserPrompt({
+      workflowRunId: prompt.workflowRunId,
+      stepId: prompt.stepId,
+    });
+
+    if (isSuccess) {
+      onAnswered();
+    }
+  };
+
   return (
     <ModalStatefulWrapper
-      // The answer is mandatory: no close button, and neither Escape nor a
-      // click on the backdrop may dismiss the question.
+      // The only way out is the Close button, which skips the step server-side.
+      // Escape and a click on the backdrop would dismiss the modal without
+      // telling the server, so the next poll would reopen the same question.
       modalInstanceId={WORKFLOW_USER_PROMPT_MODAL_ID}
       isClosable={false}
       shouldCloseModalOnClickOutsideOrEscape={false}
@@ -74,16 +78,13 @@ export const WorkflowUserPromptModal = ({
         isOtherSelected={isOtherSelected}
         onEnter={submit}
       />
-      <StyledFooter>
-        <Button
-          title={t`Save`}
-          variant="primary"
-          accent="blue"
-          disabled={!canSubmit || isSubmittingUserPrompt}
-          isLoading={isSubmittingUserPrompt}
-          onClick={submit}
-        />
-      </StyledFooter>
+      <WorkflowUserPromptModalFooter
+        onClose={() => void close()}
+        onSave={submit}
+        isSaveDisabled={!canSubmit}
+        isSaving={isSubmittingUserPrompt}
+        isClosing={isSkippingUserPrompt}
+      />
     </ModalStatefulWrapper>
   );
 };

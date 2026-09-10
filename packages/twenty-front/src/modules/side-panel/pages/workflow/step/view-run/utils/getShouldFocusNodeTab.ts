@@ -11,7 +11,9 @@ export const getShouldFocusNodeTab = ({
   actionType: WorkflowActionType | undefined;
 }) => {
   return (
-    (actionType === 'FORM' || actionType === 'USER_PROMPT') &&
+    (actionType === 'FORM' ||
+      actionType === 'USER_PROMPT' ||
+      actionType === 'USER_FORM') &&
     stepExecutionStatus === 'PENDING'
   );
 };

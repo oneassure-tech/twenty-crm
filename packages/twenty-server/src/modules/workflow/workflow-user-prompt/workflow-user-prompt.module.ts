@@ -9,6 +9,7 @@ import { WorkflowCommonModule } from 'src/modules/workflow/common/workflow-commo
 import { WorkflowExecutionContextService } from 'src/modules/workflow/workflow-executor/services/workflow-execution-context.service';
 import { WorkflowRunModule } from 'src/modules/workflow/workflow-runner/workflow-run/workflow-run.module';
 import { WorkflowRunnerModule } from 'src/modules/workflow/workflow-runner/workflow-runner.module';
+import { WorkflowUserPromptAnswerWriterWorkspaceService } from 'src/modules/workflow/workflow-user-prompt/workflow-user-prompt-answer-writer.workspace-service';
 import { WorkflowUserPromptWorkspaceService } from 'src/modules/workflow/workflow-user-prompt/workflow-user-prompt.workspace-service';
 
 @Module({
@@ -22,7 +23,11 @@ import { WorkflowUserPromptWorkspaceService } from 'src/modules/workflow/workflo
     RoleModule,
     WorkflowCommonModule,
   ],
-  providers: [WorkflowExecutionContextService, WorkflowUserPromptWorkspaceService],
+  providers: [
+    WorkflowExecutionContextService,
+    WorkflowUserPromptAnswerWriterWorkspaceService,
+    WorkflowUserPromptWorkspaceService,
+  ],
   exports: [WorkflowUserPromptWorkspaceService],
 })
 export class WorkflowUserPromptModule {}

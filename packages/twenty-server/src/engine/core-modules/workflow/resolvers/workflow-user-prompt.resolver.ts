@@ -7,12 +7,17 @@ import { CoreResolver } from 'src/engine/api/graphql/graphql-config/decorators/c
 import { PreventNestToAutoLogGraphqlErrorsFilter } from 'src/engine/core-modules/graphql/filters/prevent-nest-to-auto-log-graphql-errors.filter';
 import { ResolverValidationPipe } from 'src/engine/core-modules/graphql/pipes/resolver-validation.pipe';
 import { PendingUserPromptDTO } from 'src/engine/core-modules/workflow/dtos/pending-user-prompt.dto';
+import { SkipUserPromptResultDTO } from 'src/engine/core-modules/workflow/dtos/skip-user-prompt-result.dto';
+import { SkipUserPromptInput } from 'src/engine/core-modules/workflow/dtos/skip-user-prompt.input';
+import { SubmitUserFormResultDTO } from 'src/engine/core-modules/workflow/dtos/submit-user-form-result.dto';
+import { SubmitUserFormInput } from 'src/engine/core-modules/workflow/dtos/submit-user-form.input';
 import { SubmitUserPromptResultDTO } from 'src/engine/core-modules/workflow/dtos/submit-user-prompt-result.dto';
 import { SubmitUserPromptInput } from 'src/engine/core-modules/workflow/dtos/submit-user-prompt.input';
 import { WorkflowVersionStepGraphqlApiExceptionFilter } from 'src/engine/core-modules/workflow/filters/workflow-version-step-graphql-api-exception.filter';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { AuthWorkspaceMemberId } from 'src/engine/decorators/auth/auth-workspace-member-id.decorator';
 import { AuthWorkspace } from 'src/engine/decorators/auth/auth-workspace.decorator';
+import { NoPermissionGuard } from 'src/engine/guards/no-permission.guard';
 import { UserAuthGuard } from 'src/engine/guards/user-auth.guard';
 import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 import {
@@ -33,7 +38,7 @@ import { WorkflowUserPromptWorkspaceService } from 'src/modules/workflow/workflo
 // answering never lets someone edit a field they could not otherwise edit.
 @CoreResolver()
 @UsePipes(ResolverValidationPipe)
-@UseGuards(WorkspaceAuthGuard, UserAuthGuard)
+@UseGuards(WorkspaceAuthGuard, UserAuthGuard, NoPermissionGuard)
 @UseFilters(
   PreventNestToAutoLogGraphqlErrorsFilter,
   WorkflowVersionStepGraphqlApiExceptionFilter,
@@ -86,6 +91,51 @@ export class WorkflowUserPromptResolver {
       stepId,
       selectedOptionId,
       otherValue,
+    });
+  }
+
+  @Mutation(() => SubmitUserFormResultDTO)
+  async submitUserForm(
+    @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
+    @AuthWorkspaceMemberId() workspaceMemberId: string | undefined,
+    @Args('input')
+    { workflowRunId, stepId, answers }: SubmitUserFormInput,
+  ): Promise<SubmitUserFormResultDTO> {
+    if (!isDefined(workspaceMemberId)) {
+      throw new WorkflowVersionStepException(
+        'Only a workspace member can answer a user form',
+        WorkflowVersionStepExceptionCode.INVALID_REQUEST,
+      );
+    }
+
+    return this.workflowUserPromptWorkspaceService.submitUserForm({
+      workspaceId,
+      workspaceMemberId,
+      workflowRunId,
+      stepId,
+      answers,
+    });
+  }
+
+  @Mutation(() => SkipUserPromptResultDTO)
+  async skipUserPrompt(
+    @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
+    @AuthWorkspaceMemberId() workspaceMemberId: string | undefined,
+    @Args('input')
+    { workflowRunId, stepId }: SkipUserPromptInput,
+  ): Promise<SkipUserPromptResultDTO> {
+    if (!isDefined(workspaceMemberId)) {
+      throw new WorkflowVersionStepException(
+        'Only a workspace member can close a user prompt',
+        WorkflowVersionStepExceptionCode.INVALID_REQUEST,
+      );
+    }
+
+    return this.workflowUserPromptWorkspaceService.skipUserPrompt({
+      workspaceId,
+      workspaceMemberId,
+      workflowRunId,
+      stepId,
     });
   }
 }
