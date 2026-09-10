@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { isString } from '@sniptt/guards';
+import { isNonEmptyString, isString } from '@sniptt/guards';
 import {
   getOutputSchemaFromValue,
   inputSchemaToOutputSchema,
@@ -45,6 +45,7 @@ import { generateFakeObjectRecord } from 'src/modules/workflow/workflow-builder/
 import { generateFakeObjectRecordEvent } from 'src/modules/workflow/workflow-builder/workflow-schema/utils/generate-fake-object-record-event';
 import { inferArrayItemSchema } from 'src/modules/workflow/workflow-builder/workflow-schema/utils/infer-array-item-schema';
 import { type FormFieldMetadata } from 'src/modules/workflow/workflow-executor/workflow-actions/form/types/workflow-form-action-settings.type';
+import { type UserFormQuestion } from 'src/modules/workflow/workflow-executor/workflow-actions/user-form/types/workflow-user-form-action-settings.type';
 import { type WorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action.type';
 import {
   WorkflowTrigger,
@@ -117,6 +118,10 @@ export class WorkflowSchemaWorkspaceService {
         });
       case WorkflowActionType.USER_PROMPT:
         return this.computeUserPromptActionOutputSchema();
+      case WorkflowActionType.USER_FORM:
+        return this.computeUserFormActionOutputSchema({
+          questions: step.settings.input.questions,
+        });
       case WorkflowActionType.ITERATOR: {
         const items = step.settings.input.items;
 
@@ -402,6 +407,30 @@ export class WorkflowSchemaWorkspaceService {
         value: false,
       },
     };
+  }
+
+  private computeUserFormActionOutputSchema({
+    questions,
+  }: {
+    questions: UserFormQuestion[];
+  }): OutputSchema {
+    // Answers are keyed by the field they are written to, so a later step
+    // reads them as {{step.<fieldName>}} without knowing the question order.
+    return questions.reduce<OutputSchema>((outputSchema, question) => {
+      if (!isNonEmptyString(question.fieldName)) {
+        return outputSchema;
+      }
+
+      return {
+        ...outputSchema,
+        [question.fieldName]: {
+          isLeaf: true,
+          type: 'string',
+          label: question.question,
+          value: '',
+        },
+      };
+    }, {});
   }
 
   private computeSendEmailActionOutputSchema(): OutputSchema {

@@ -200,10 +200,19 @@ export class WorkflowValidationWorkspaceService {
         return step;
       }
 
+      // Spreading the step as its own union type would distribute over every
+      // trigger and action shape, which exceeds TypeScript's union complexity
+      // limit. Only `settings` is touched here, so the spread goes through
+      // that narrow shape and the result is asserted back to TStep.
+      const stepWithSettings = step as { settings: object };
+
       return {
-        ...step,
-        settings: { ...step.settings, outputSchema: computedSchema },
-      };
+        ...stepWithSettings,
+        settings: {
+          ...stepWithSettings.settings,
+          outputSchema: computedSchema,
+        },
+      } as TStep;
     } catch {
       // Output schema enrichment is best-effort: if it cannot be computed,
       // validation still runs against the step's existing settings rather

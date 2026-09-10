@@ -84,6 +84,11 @@ export { workflowUpdateRecordActionSchema } from './schemas/update-record-action
 export { workflowUpdateRecordActionSettingsSchema } from './schemas/update-record-action-settings-schema';
 export { workflowUpsertRecordActionSchema } from './schemas/upsert-record-action-schema';
 export { workflowUpsertRecordActionSettingsSchema } from './schemas/upsert-record-action-settings-schema';
+export { workflowUserFormActionSchema } from './schemas/user-form-action-schema';
+export {
+  workflowUserFormQuestionSchema,
+  workflowUserFormActionSettingsSchema,
+} from './schemas/user-form-action-settings-schema';
 export { workflowUserPromptActionSchema } from './schemas/user-prompt-action-schema';
 export {
   workflowUserPromptOptionSchema,

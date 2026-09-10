@@ -10,7 +10,7 @@ import { MobileNavigationBar } from '@/navigation/components/MobileNavigationBar
 import { PageDragDropProvider } from '@/navigation-menu-item/display/dnd/providers/PageDragDropProvider';
 import { useShowFullscreen } from '@/ui/layout/fullscreen/hooks/useShowFullscreen';
 import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
-import { WorkflowUserPromptWatcherEffect } from '@/workflow/workflow-user-prompt/components/WorkflowUserPromptWatcherEffect';
+import { WorkflowUserPromptWatcher } from '@/workflow/workflow-user-prompt/components/WorkflowUserPromptWatcher';
 import { styled } from '@linaria/react';
 import { Outlet } from 'react-router-dom';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
@@ -100,7 +100,7 @@ export const DefaultLayout = () => {
               </PageDragDropProvider>
             </StyledPageContainer>
             {isMobile && <MobileNavigationBar />}
-            <WorkflowUserPromptWatcherEffect />
+            <WorkflowUserPromptWatcher />
           </AppErrorBoundary>
         </StyledLayout>
       </FileUploadProvider>

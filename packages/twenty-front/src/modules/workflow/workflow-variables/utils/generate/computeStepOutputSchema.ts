@@ -1,4 +1,5 @@
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
+import { isNonEmptyString } from '@sniptt/guards';
 import {
   type WorkflowAction,
   type WorkflowTrigger,
@@ -12,6 +13,7 @@ import { generateRecordOutputSchema } from '@/workflow/workflow-variables/utils/
 import { FieldMetadataType } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import {
+  type FormOutputSchema,
   buildManualTriggerMetadataNode,
   WORKFLOW_TRIGGER_METADATA_KEY,
   WORKFLOW_TRIGGER_PAYLOAD_KEY,
@@ -239,6 +241,41 @@ export const computeStepOutputSchema = ({
           value: false,
         },
       };
+    }
+
+    case 'USER_FORM': {
+      const questions = step.settings?.input?.questions;
+
+      if (!isDefined(questions) || questions.length === 0) {
+        return {};
+      }
+
+      const objectMetadataItem = findObjectMetadataItemByName(
+        objectMetadataItems,
+        step.settings?.input?.objectName,
+      );
+
+      // Answers are keyed by the field they are written to, so a later step
+      // reads them as {{step.<fieldName>}} without knowing the question order.
+      return questions.reduce<FormOutputSchema>((outputSchema, question) => {
+        if (!isNonEmptyString(question.fieldName)) {
+          return outputSchema;
+        }
+
+        const fieldMetadataItem = objectMetadataItem?.fields.find(
+          (field) => field.name === question.fieldName,
+        );
+
+        return {
+          ...outputSchema,
+          [question.fieldName]: {
+            isLeaf: true,
+            type: fieldMetadataItem?.type ?? FieldMetadataType.TEXT,
+            label: question.question,
+            value: '',
+          },
+        };
+      }, {});
     }
 
     case 'SEND_EMAIL': {

@@ -7,7 +7,7 @@ FROM node:24.18.0-alpine3.23@sha256:595398b0081eacda8e1c4c5b97b76cd1020e4d58a8eb
 WORKDIR /app
 
 COPY ./package.json ./yarn.lock ./.yarnrc.yml ./tsconfig.base.json ./nx.json /app/
-COPY ./.yarn/releases /app/.yarn/releases
+COPY ./.yarn/releases /app/.yarn/releases 
 COPY ./.yarn/patches /app/.yarn/patches
 
 COPY ./packages/twenty-ui/package.json /app/packages/twenty-ui/

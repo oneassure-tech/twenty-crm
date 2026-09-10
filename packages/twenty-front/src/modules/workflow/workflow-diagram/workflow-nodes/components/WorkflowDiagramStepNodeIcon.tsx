@@ -53,7 +53,8 @@ export const WorkflowDiagramStepNodeIcon = ({
           );
         }
         case 'FORM':
-        case 'USER_PROMPT': {
+        case 'USER_PROMPT':
+        case 'USER_FORM': {
           return <Icon size={theme.icon.size.md} color={theme.color.orange} />;
         }
         case 'AI_AGENT': {
