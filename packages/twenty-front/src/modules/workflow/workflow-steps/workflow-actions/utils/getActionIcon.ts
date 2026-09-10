@@ -26,6 +26,7 @@ export const getActionIcon = (actionType: WorkflowActionType) => {
       return 'IconFunction';
     case 'FORM':
     case 'USER_PROMPT':
+    case 'USER_FORM':
       return HUMAN_INPUT_ACTIONS.find((item) => item.type === actionType)?.icon;
     case 'ITERATOR':
     case 'DELAY':

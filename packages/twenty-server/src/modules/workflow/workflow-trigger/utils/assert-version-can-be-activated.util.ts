@@ -13,6 +13,7 @@ import {
 } from 'src/modules/workflow/workflow-trigger/exceptions/workflow-trigger.exception';
 import { WorkflowTriggerType } from 'src/modules/workflow/workflow-trigger/types/workflow-trigger.type';
 import { assertFormStepIsValid } from 'src/modules/workflow/workflow-trigger/utils/assert-form-step-is-valid.util';
+import { assertUserFormStepIsValid } from 'src/modules/workflow/workflow-trigger/utils/assert-user-form-step-is-valid.util';
 import { assertUserPromptStepIsValid } from 'src/modules/workflow/workflow-trigger/utils/assert-user-prompt-step-is-valid.util';
 
 export function assertVersionCanBeActivated(
@@ -270,6 +271,9 @@ function assertStepIsValid(step: WorkflowAction) {
       break;
     case WorkflowActionType.USER_PROMPT:
       assertUserPromptStepIsValid(step.settings);
+      break;
+    case WorkflowActionType.USER_FORM:
+      assertUserFormStepIsValid(step.settings);
       break;
     default:
       break;

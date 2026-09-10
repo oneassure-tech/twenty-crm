@@ -5,6 +5,7 @@ export const PENDING_USER_PROMPTS = gql`
     pendingUserPrompts {
       workflowRunId
       stepId
+      kind
       question
       options {
         id
@@ -12,6 +13,13 @@ export const PENDING_USER_PROMPTS = gql`
       }
       allowOtherOption
       otherOptionLabel
+      objectNameSingular
+      questions {
+        id
+        question
+        fieldName
+        isRequired
+      }
     }
   }
 `;

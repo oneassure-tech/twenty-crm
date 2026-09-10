@@ -12,6 +12,7 @@ export enum WorkflowActionType {
   PICK_RECORD = 'PICK_RECORD',
   FORM = 'FORM',
   USER_PROMPT = 'USER_PROMPT',
+  USER_FORM = 'USER_FORM',
   FILTER = 'FILTER',
   IF_ELSE = 'IF_ELSE',
   HTTP_REQUEST = 'HTTP_REQUEST',

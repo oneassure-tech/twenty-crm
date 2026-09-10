@@ -6,9 +6,11 @@ import { WorkflowRunSSESubscribeEffect } from '@/workflow/workflow-diagram/compo
 import { WorkflowStepBody } from '@/workflow/workflow-steps/components/WorkflowStepBody';
 import { WorkflowStepCmdEnterButton } from '@/workflow/workflow-steps/components/WorkflowStepCmdEnterButton';
 import { WorkflowUserPromptAnswerForm } from '@/workflow/workflow-user-prompt/components/WorkflowUserPromptAnswerForm';
+import { useSkipUserPrompt } from '@/workflow/workflow-user-prompt/hooks/useSkipUserPrompt';
 import { useSubmitUserPrompt } from '@/workflow/workflow-user-prompt/hooks/useSubmitUserPrompt';
 import { useUserPromptAnswer } from '@/workflow/workflow-user-prompt/hooks/useUserPromptAnswer';
 import { useLingui } from '@lingui/react/macro';
+import { Button } from 'twenty-ui/input';
 
 export type WorkflowEditActionUserPromptFillerProps = {
   action: WorkflowUserPromptAction;
@@ -28,6 +30,7 @@ export const WorkflowEditActionUserPromptFiller = ({
   const workflowRunId = useWorkflowRunIdOrThrow();
   const { goBackFromSidePanel } = useSidePanelHistory();
   const { submitUserPrompt, isSubmittingUserPrompt } = useSubmitUserPrompt();
+  const { skipUserPrompt, isSkippingUserPrompt } = useSkipUserPrompt();
 
   const {
     selectedOptionId,
@@ -53,6 +56,17 @@ export const WorkflowEditActionUserPromptFiller = ({
     },
   });
 
+  const close = async () => {
+    const isSuccess = await skipUserPrompt({
+      workflowRunId,
+      stepId: action.id,
+    });
+
+    if (isSuccess) {
+      goBackFromSidePanel();
+    }
+  };
+
   return (
     <>
       <WorkflowRunSSESubscribeEffect workflowRunId={workflowRunId} />
@@ -71,10 +85,19 @@ export const WorkflowEditActionUserPromptFiller = ({
       {!actionOptions.readonly && (
         <SidePanelFooter
           actions={[
+            <Button
+              title={t`Close`}
+              variant="secondary"
+              disabled={isSubmittingUserPrompt || isSkippingUserPrompt}
+              isLoading={isSkippingUserPrompt}
+              onClick={() => void close()}
+            />,
             <WorkflowStepCmdEnterButton
               title={t`Save`}
               onClick={submit}
-              disabled={!canSubmit || isSubmittingUserPrompt}
+              disabled={
+                !canSubmit || isSubmittingUserPrompt || isSkippingUserPrompt
+              }
             />,
           ]}
         />

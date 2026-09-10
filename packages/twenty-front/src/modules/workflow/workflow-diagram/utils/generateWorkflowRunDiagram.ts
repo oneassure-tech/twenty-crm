@@ -26,7 +26,7 @@ const shouldOpenStep = ({
   const step = steps.find((step) => step.id === nodeId);
   const stepInfo = stepInfos?.[nodeId];
   const isStepOpenable =
-    isDefined(step) && ['FORM', 'USER_PROMPT'].includes(step.type);
+    isDefined(step) && ['FORM', 'USER_PROMPT', 'USER_FORM'].includes(step.type);
 
   if (!isStepOpenable || !isDefined(stepInfo)) {
     return false;

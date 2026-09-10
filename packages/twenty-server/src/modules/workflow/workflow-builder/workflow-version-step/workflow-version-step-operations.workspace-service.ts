@@ -523,6 +523,23 @@ export class WorkflowVersionStepOperationsWorkspaceService {
           },
         };
       }
+      case WorkflowActionType.USER_FORM: {
+        return {
+          builtStep: {
+            ...baseStep,
+            name: 'Ask User Form',
+            type: WorkflowActionType.USER_FORM,
+            settings: {
+              ...BASE_STEP_DEFINITION,
+              input: {
+                questions: [],
+                objectName: '',
+                objectRecordId: '{{trigger.recordId}}',
+              },
+            },
+          },
+        };
+      }
       case WorkflowActionType.FILTER: {
         return {
           builtStep: {

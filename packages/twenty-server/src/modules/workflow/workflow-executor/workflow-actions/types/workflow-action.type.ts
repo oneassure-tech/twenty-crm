@@ -20,6 +20,7 @@ import {
   type WorkflowUpsertRecordActionSettings,
 } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/types/workflow-record-crud-action-settings.type';
 import { type WorkflowActionSettings } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action-settings.type';
+import { type WorkflowUserFormActionSettings } from 'src/modules/workflow/workflow-executor/workflow-actions/user-form/types/workflow-user-form-action-settings.type';
 import { type WorkflowUserPromptActionSettings } from 'src/modules/workflow/workflow-executor/workflow-actions/user-prompt/types/workflow-user-prompt-action-settings.type';
 
 type BaseWorkflowAction = {
@@ -100,6 +101,11 @@ export type WorkflowUserPromptAction = BaseWorkflowAction & {
   settings: WorkflowUserPromptActionSettings;
 };
 
+export type WorkflowUserFormAction = BaseWorkflowAction & {
+  type: WorkflowActionType.USER_FORM;
+  settings: WorkflowUserFormActionSettings;
+};
+
 export type WorkflowFilterAction = BaseWorkflowAction & {
   type: WorkflowActionType.FILTER;
   settings: WorkflowFilterActionSettings;
@@ -148,6 +154,7 @@ export type WorkflowAction =
   | WorkflowPickRecordAction
   | WorkflowFormAction
   | WorkflowUserPromptAction
+  | WorkflowUserFormAction
   | WorkflowFilterAction
   | WorkflowIfElseAction
   | WorkflowHttpRequestAction

@@ -1,15 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
 import { msg } from '@lingui/core/macro';
-import { isString } from '@sniptt/guards';
-import { isDefined, isValidUuid, resolveInput } from 'twenty-shared/utils';
-import {
-  getWorkflowRunContext,
-  StepStatus,
-  USER_PROMPT_OTHER_OPTION_ID,
-} from 'twenty-shared/workflow';
+import { isDefined } from 'twenty-shared/utils';
+import { StepStatus, WorkflowActionType } from 'twenty-shared/workflow';
 
-import { UpdateRecordService } from 'src/engine/core-modules/record-crud/services/update-record.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system-auth-context.util';
 import {
@@ -20,15 +14,18 @@ import {
   WorkflowRunStatus,
   type WorkflowRunWorkspaceEntity,
 } from 'src/modules/workflow/common/standard-objects/workflow-run.workspace-entity';
-import { WorkflowExecutionContextService } from 'src/modules/workflow/workflow-executor/services/workflow-execution-context.service';
-import { buildWorkflowActorMetadata } from 'src/modules/workflow/workflow-executor/utils/build-workflow-actor-metadata.util';
-import { type WorkflowUserPromptAction } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action.type';
+import { type WorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action.type';
+import { isWorkflowUserFormAction } from 'src/modules/workflow/workflow-executor/workflow-actions/user-form/guards/is-workflow-user-form-action.guard';
 import { isWorkflowUserPromptAction } from 'src/modules/workflow/workflow-executor/workflow-actions/user-prompt/guards/is-workflow-user-prompt-action.guard';
 import { WorkflowRunWorkspaceService } from 'src/modules/workflow/workflow-runner/workflow-run/workflow-run.workspace-service';
 import { WorkflowRunnerWorkspaceService } from 'src/modules/workflow/workflow-runner/workspace-services/workflow-runner.workspace-service';
-import { WorkflowCommonWorkspaceService } from 'src/modules/workflow/common/workspace-services/workflow-common.workspace-service';
+import { WorkflowUserPromptAnswerWriterWorkspaceService } from 'src/modules/workflow/workflow-user-prompt/workflow-user-prompt-answer-writer.workspace-service';
+import { resolveUserFormAnswers } from 'src/modules/workflow/workflow-user-prompt/utils/resolve-user-form-answers.util';
+import { resolveUserPromptAnswer } from 'src/modules/workflow/workflow-user-prompt/utils/resolve-user-prompt-answer.util';
 import {
   type PendingUserPrompt,
+  type SkippedUserPromptInfo,
+  type UpdatedRecordFieldsInfo,
   type UpdatedRecordInfo,
 } from 'src/modules/workflow/workflow-user-prompt/types/pending-user-prompt.type';
 
@@ -38,9 +35,7 @@ export class WorkflowUserPromptWorkspaceService {
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
     private readonly workflowRunWorkspaceService: WorkflowRunWorkspaceService,
     private readonly workflowRunnerWorkspaceService: WorkflowRunnerWorkspaceService,
-    private readonly workflowExecutionContextService: WorkflowExecutionContextService,
-    private readonly updateRecordService: UpdateRecordService,
-    private readonly workflowCommonWorkspaceService: WorkflowCommonWorkspaceService,
+    private readonly workflowUserPromptAnswerWriterWorkspaceService: WorkflowUserPromptAnswerWriterWorkspaceService,
   ) {}
 
   async getPendingUserPrompts({
@@ -85,27 +80,51 @@ export class WorkflowUserPromptWorkspaceService {
       const steps = workflowRun.state.flow?.steps ?? [];
       const stepInfos = workflowRun.state.stepInfos ?? {};
 
-      return steps.flatMap((step) => {
-        if (
-          !isWorkflowUserPromptAction(step) ||
-          stepInfos[step.id]?.status !== StepStatus.PENDING
-        ) {
+      return steps.flatMap((step): PendingUserPrompt[] => {
+        if (stepInfos[step.id]?.status !== StepStatus.PENDING) {
           return [];
         }
 
-        const { question, options, allowOtherOption, otherOptionLabel } =
-          step.settings.input;
+        if (isWorkflowUserPromptAction(step)) {
+          const { question, options, allowOtherOption, otherOptionLabel } =
+            step.settings.input;
 
-        return [
-          {
-            workflowRunId: workflowRun.id,
-            stepId: step.id,
-            question,
-            options,
-            allowOtherOption,
-            otherOptionLabel,
-          },
-        ];
+          return [
+            {
+              workflowRunId: workflowRun.id,
+              stepId: step.id,
+              kind: WorkflowActionType.USER_PROMPT as const,
+              question,
+              options,
+              allowOtherOption,
+              otherOptionLabel,
+              objectNameSingular: step.settings.input.objectName,
+              questions: [],
+            },
+          ];
+        }
+
+        if (isWorkflowUserFormAction(step)) {
+          const { questions, objectName } = step.settings.input;
+
+          return [
+            {
+              workflowRunId: workflowRun.id,
+              stepId: step.id,
+              kind: WorkflowActionType.USER_FORM as const,
+              // The form carries its questions one level down, so the shared
+              // single-question fields stay empty for this kind.
+              question: '',
+              options: [],
+              allowOtherOption: false,
+              otherOptionLabel: '',
+              objectNameSingular: objectName,
+              questions,
+            },
+          ];
+        }
+
+        return [];
       });
     });
   }
@@ -125,22 +144,12 @@ export class WorkflowUserPromptWorkspaceService {
     selectedOptionId: string;
     otherValue?: string;
   }): Promise<UpdatedRecordInfo> {
-    const workflowRun =
-      await this.workflowRunWorkspaceService.getWorkflowRunOrFail({
-        workflowRunId,
-        workspaceId,
-      });
-
-    const step = workflowRun.state?.flow?.steps?.find(
-      (flowStep) => flowStep.id === stepId,
-    );
-
-    if (!isDefined(step)) {
-      throw new WorkflowVersionStepException(
-        'Step not found',
-        WorkflowVersionStepExceptionCode.NOT_FOUND,
-      );
-    }
+    const { workflowRun, step } = await this.getPendingStepOrFail({
+      workspaceId,
+      workspaceMemberId,
+      workflowRunId,
+      stepId,
+    });
 
     if (!isWorkflowUserPromptAction(step)) {
       throw new WorkflowVersionStepException(
@@ -152,42 +161,22 @@ export class WorkflowUserPromptWorkspaceService {
       );
     }
 
-    if (
-      workflowRun.state?.stepInfos?.[stepId]?.status !== StepStatus.PENDING
-    ) {
-      throw new WorkflowVersionStepException(
-        'Step is not awaiting an answer',
-        WorkflowVersionStepExceptionCode.INVALID_REQUEST,
-        {
-          userFriendlyMessage: msg`This question has already been answered`,
-        },
-      );
-    }
-
-    // The prompt is addressed to one person; never take an answer from anyone else.
-    if (this.getTargetWorkspaceMemberId(workflowRun) !== workspaceMemberId) {
-      throw new WorkflowVersionStepException(
-        'User prompt is not addressed to this workspace member',
-        WorkflowVersionStepExceptionCode.INVALID_REQUEST,
-        {
-          userFriendlyMessage: msg`This question is not addressed to you`,
-        },
-      );
-    }
-
-    const { answer, isOther } = this.resolveAnswer({
+    const { answer, isOther } = resolveUserPromptAnswer({
       step,
       selectedOptionId,
       otherValue,
     });
 
-    const updatedRecord = await this.writeAnswerToRecord({
-      workspaceId,
-      workflowRunId,
-      workflowRun,
-      step,
-      answer,
-    });
+    const updatedRecord =
+      await this.workflowUserPromptAnswerWriterWorkspaceService.writePromptAnswer(
+        {
+          workspaceId,
+          workflowRunId,
+          workflowRun,
+          step,
+          answer,
+        },
+      );
 
     await this.workflowRunWorkspaceService.updateWorkflowRunStepInfo({
       stepId,
@@ -208,135 +197,171 @@ export class WorkflowUserPromptWorkspaceService {
     return updatedRecord;
   }
 
-  private resolveAnswer({
-    step,
-    selectedOptionId,
-    otherValue,
-  }: {
-    step: WorkflowUserPromptAction;
-    selectedOptionId: string;
-    otherValue?: string;
-  }): { answer: string; isOther: boolean } {
-    const { options, allowOtherOption } = step.settings.input;
-
-    if (selectedOptionId === USER_PROMPT_OTHER_OPTION_ID) {
-      if (!allowOtherOption) {
-        throw new WorkflowVersionStepException(
-          'This user prompt does not allow a typed answer',
-          WorkflowVersionStepExceptionCode.INVALID_REQUEST,
-          {
-            userFriendlyMessage: msg`This question does not allow a typed answer`,
-          },
-        );
-      }
-
-      const trimmedOtherValue = otherValue?.trim();
-
-      // The prompt has no discard path, so an empty answer must be refused
-      // here too and not only in the modal.
-      if (!isDefined(trimmedOtherValue) || trimmedOtherValue.length === 0) {
-        throw new WorkflowVersionStepException(
-          'A typed answer is required',
-          WorkflowVersionStepExceptionCode.INVALID_REQUEST,
-          {
-            userFriendlyMessage: msg`Please type your answer`,
-          },
-        );
-      }
-
-      return { answer: trimmedOtherValue, isOther: true };
-    }
-
-    const selectedOption = options.find(
-      (option) => option.id === selectedOptionId,
-    );
-
-    if (!isDefined(selectedOption)) {
-      throw new WorkflowVersionStepException(
-        'Selected option does not exist on this user prompt',
-        WorkflowVersionStepExceptionCode.INVALID_REQUEST,
-        {
-          userFriendlyMessage: msg`Please choose one of the available options`,
-        },
-      );
-    }
-
-    return { answer: selectedOption.label, isOther: false };
-  }
-
-  private async writeAnswerToRecord({
+  async submitUserForm({
     workspaceId,
+    workspaceMemberId,
     workflowRunId,
-    workflowRun,
-    step,
-    answer,
+    stepId,
+    answers,
   }: {
     workspaceId: string;
+    workspaceMemberId: string;
     workflowRunId: string;
-    workflowRun: WorkflowRunWorkspaceEntity;
-    step: WorkflowUserPromptAction;
-    answer: string;
-  }): Promise<UpdatedRecordInfo> {
-    const context = getWorkflowRunContext(workflowRun.state?.stepInfos ?? {});
-    const { objectName, fieldName } = step.settings.input;
+    stepId: string;
+    answers: Record<string, unknown>;
+  }): Promise<UpdatedRecordFieldsInfo> {
+    const { workflowRun, step } = await this.getPendingStepOrFail({
+      workspaceId,
+      workspaceMemberId,
+      workflowRunId,
+      stepId,
+    });
 
-    // Only the record id is resolved: resolveInput walks and mutates whatever
-    // it is handed, and an option label is the user's text, not a variable.
-    const objectRecordId = resolveInput(
-      step.settings.input.objectRecordId,
-      context,
-    );
-
-    if (!isString(objectRecordId) || !isValidUuid(objectRecordId)) {
+    if (!isWorkflowUserFormAction(step)) {
       throw new WorkflowVersionStepException(
-        `Failed to save the answer: "${objectRecordId}" is not a valid record ID`,
+        'Step is not a user form',
         WorkflowVersionStepExceptionCode.INVALID_REQUEST,
         {
-          userFriendlyMessage: msg`Could not find the record to save this answer to`,
+          userFriendlyMessage: msg`Step is not an Ask User Form step`,
         },
       );
     }
 
-    const executionContext =
-      await this.workflowExecutionContextService.getExecutionContext({
+    const answersToWrite = resolveUserFormAnswers({ step, answers });
+
+    const updatedRecord =
+      await this.workflowUserPromptAnswerWriterWorkspaceService.writeFormAnswers(
+        {
+          workspaceId,
+          workflowRunId,
+          workflowRun,
+          step,
+          answers: answersToWrite,
+        },
+      );
+
+    await this.workflowRunWorkspaceService.updateWorkflowRunStepInfo({
+      stepId,
+      stepInfo: {
+        status: StepStatus.SUCCESS,
+        result: answersToWrite,
+      },
+      workspaceId,
+      workflowRunId,
+    });
+
+    await this.workflowRunnerWorkspaceService.resume({
+      workspaceId,
+      workflowRunId,
+      lastExecutedStepId: stepId,
+    });
+
+    return updatedRecord;
+  }
+
+  // Closing the modal is a real answer to give: the person declines to fill it
+  // in. The step is skipped rather than answered, which lets the executor walk
+  // forward and skip whatever depended on it, so the run ends instead of
+  // parking on a question nobody can answer.
+  async skipUserPrompt({
+    workspaceId,
+    workspaceMemberId,
+    workflowRunId,
+    stepId,
+  }: {
+    workspaceId: string;
+    workspaceMemberId: string;
+    workflowRunId: string;
+    stepId: string;
+  }): Promise<SkippedUserPromptInfo> {
+    const { step } = await this.getPendingStepOrFail({
+      workspaceId,
+      workspaceMemberId,
+      workflowRunId,
+      stepId,
+    });
+
+    if (!isWorkflowUserPromptAction(step) && !isWorkflowUserFormAction(step)) {
+      throw new WorkflowVersionStepException(
+        'Step is not a user prompt or a user form',
+        WorkflowVersionStepExceptionCode.INVALID_REQUEST,
+        {
+          userFriendlyMessage: msg`This step cannot be closed`,
+        },
+      );
+    }
+
+    await this.workflowRunWorkspaceService.updateWorkflowRunStepInfo({
+      stepId,
+      stepInfo: {
+        status: StepStatus.SKIPPED,
+      },
+      workspaceId,
+      workflowRunId,
+    });
+
+    await this.workflowRunnerWorkspaceService.resume({
+      workspaceId,
+      workflowRunId,
+      lastExecutedStepId: stepId,
+    });
+
+    return { success: true };
+  }
+
+  private async getPendingStepOrFail({
+    workspaceId,
+    workspaceMemberId,
+    workflowRunId,
+    stepId,
+  }: {
+    workspaceId: string;
+    workspaceMemberId: string;
+    workflowRunId: string;
+    stepId: string;
+  }): Promise<{
+    workflowRun: WorkflowRunWorkspaceEntity;
+    step: WorkflowAction;
+  }> {
+    const workflowRun =
+      await this.workflowRunWorkspaceService.getWorkflowRunOrFail({
         workflowRunId,
         workspaceId,
       });
 
-    const toolOutput = await this.updateRecordService.execute({
-      objectName,
-      objectRecordId,
-      objectRecord: { [fieldName]: answer },
-      fieldsToUpdate: [fieldName],
-      authContext: executionContext.authContext,
-      updatedBy: buildWorkflowActorMetadata(executionContext),
-      rolePermissionConfig: executionContext.rolePermissionConfig,
-    });
+    const step = workflowRun.state?.flow?.steps?.find(
+      (flowStep) => flowStep.id === stepId,
+    );
 
-    if (!toolOutput.success) {
+    if (!isDefined(step)) {
       throw new WorkflowVersionStepException(
-        `Failed to save the answer: ${toolOutput.error ?? toolOutput.message}`,
+        'Step not found',
+        WorkflowVersionStepExceptionCode.NOT_FOUND,
+      );
+    }
+
+    if (workflowRun.state?.stepInfos?.[stepId]?.status !== StepStatus.PENDING) {
+      throw new WorkflowVersionStepException(
+        'Step is not awaiting an answer',
         WorkflowVersionStepExceptionCode.INVALID_REQUEST,
         {
-          userFriendlyMessage: msg`Could not save your answer, please try again`,
+          userFriendlyMessage: msg`This question has already been answered`,
         },
       );
     }
 
-    const { flatObjectMetadata } =
-      await this.workflowCommonWorkspaceService.getObjectMetadataInfo(
-        objectName,
-        workspaceId,
+    // The prompt is addressed to one person; never take an answer from anyone else.
+    if (this.getTargetWorkspaceMemberId(workflowRun) !== workspaceMemberId) {
+      throw new WorkflowVersionStepException(
+        'User prompt is not addressed to this workspace member',
+        WorkflowVersionStepExceptionCode.INVALID_REQUEST,
+        {
+          userFriendlyMessage: msg`This question is not addressed to you`,
+        },
       );
+    }
 
-    return {
-      success: true,
-      objectNameSingular: flatObjectMetadata.nameSingular,
-      objectNamePlural: flatObjectMetadata.namePlural,
-      recordId: objectRecordId,
-      fieldName,
-      answer,
-    };
+    return { workflowRun, step };
   }
 
   // A database-event run carries the acting member in its trigger payload; a
