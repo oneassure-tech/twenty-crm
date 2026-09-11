@@ -17,7 +17,7 @@ import { getRelativeDatePickerCalendarRange } from '@/ui/input/components/intern
 import { useCloseDropdown } from '@/ui/layout/dropdown/hooks/useCloseDropdown';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
-import { lazy, Suspense, useContext, type ComponentType } from 'react';
+import { lazy, Suspense, useContext, useMemo, type ComponentType } from 'react';
 import type { DatePickerProps as ReactDatePickerLibProps } from 'react-datepicker';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 
@@ -153,8 +153,12 @@ export const DateTimePicker = ({
 
   const { userTimezone } = useUserTimezone();
 
-  const dateToUse =
-    date ?? Temporal.Now.zonedDateTimeISO(timeZone ?? userTimezone);
+  // Memoized so an empty picker does not hand its time input a new "now" on
+  // every render, which would reset whatever time is being typed.
+  const dateToUse = useMemo(
+    () => date ?? Temporal.Now.zonedDateTimeISO(timeZone ?? userTimezone),
+    [date, timeZone, userTimezone],
+  );
 
   const { closeDropdown: closeMonthYearPanel } = useCloseDropdown();
 
