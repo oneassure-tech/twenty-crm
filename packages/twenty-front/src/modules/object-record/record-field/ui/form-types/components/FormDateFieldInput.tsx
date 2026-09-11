@@ -13,6 +13,8 @@ import { DatePickerInput } from '@/ui/input/components/internal/date/components/
 import { useUserTimezone } from '@/ui/input/components/internal/date/hooks/useUserTimezone';
 
 import { useCloseDropdown } from '@/ui/layout/dropdown/hooks/useCloseDropdown';
+import { RootStackingContextZIndices } from '@/ui/layout/constants/RootStackingContextZIndices';
+import { useIsInsideModal } from '@/ui/layout/modal/hooks/useIsInsideModal';
 import { OverlayContainer } from '@/ui/layout/overlay/components/OverlayContainer';
 import { useHotkeysOnFocusedElement } from '@/ui/utilities/hotkey/hooks/useHotkeysOnFocusedElement';
 import { useListenClickOutside } from '@/ui/utilities/pointer-event/hooks/useListenClickOutside';
@@ -105,6 +107,8 @@ export const FormDateFieldInput = ({
 
   const displayDatePicker =
     draftValue.type === 'static' && draftValue.mode === 'edit';
+
+  const isInsideModal = useIsInsideModal();
 
   const { refs, floatingStyles } = useFloating({
     open: displayDatePicker,
@@ -298,7 +302,14 @@ export const FormDateFieldInput = ({
           <FloatingPortal>
             <div
               ref={refs.setFloating}
-              style={floatingStyles}
+              style={{
+                ...floatingStyles,
+                // Portalled to document.body, so inside a modal the picker
+                // would otherwise open under the modal backdrop.
+                ...(isInsideModal && {
+                  zIndex: RootStackingContextZIndices.DropdownPortalAboveModal,
+                }),
+              }}
               data-click-outside-id={FORM_DATE_FIELD_PICKER_CLICK_OUTSIDE_ID}
             >
               <OverlayContainer>
