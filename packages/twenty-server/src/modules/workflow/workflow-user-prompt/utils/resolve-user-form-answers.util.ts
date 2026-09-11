@@ -1,6 +1,7 @@
 import { msg } from '@lingui/core/macro';
-import { isString } from '@sniptt/guards';
+import { type FieldMetadataType } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
+import { isUserFormAnswerEmpty } from 'twenty-shared/workflow';
 
 import {
   WorkflowVersionStepException,
@@ -8,21 +9,21 @@ import {
 } from 'src/modules/workflow/common/exceptions/workflow-version-step.exception';
 import { type WorkflowUserFormAction } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action.type';
 
-const isEmptyAnswer = (answer: unknown): boolean => {
-  if (!isDefined(answer)) {
-    return true;
-  }
-
-  return isString(answer) && answer.trim().length === 0;
-};
-
 export const resolveUserFormAnswers = ({
   step,
   answers,
+  fieldTypeByFieldName,
 }: {
   step: WorkflowUserFormAction;
   answers: Record<string, unknown>;
+  fieldTypeByFieldName: Record<string, FieldMetadataType>;
 }): Record<string, unknown> => {
+  const isEmptyAnswer = (fieldName: string, answer: unknown) =>
+    isUserFormAnswerEmpty({
+      fieldType: fieldTypeByFieldName[fieldName],
+      answer,
+    });
+
   const { questions } = step.settings.input;
   const askedFieldNames = new Set(
     questions.map((question) => question.fieldName),
@@ -47,7 +48,8 @@ export const resolveUserFormAnswers = ({
 
   const missingRequiredQuestion = questions.find(
     (question) =>
-      question.isRequired && isEmptyAnswer(answers[question.fieldName]),
+      question.isRequired &&
+      isEmptyAnswer(question.fieldName, answers[question.fieldName]),
   );
 
   if (isDefined(missingRequiredQuestion)) {
@@ -63,6 +65,8 @@ export const resolveUserFormAnswers = ({
   // An unanswered optional question leaves its field alone rather than
   // blanking whatever is already on the record.
   return Object.fromEntries(
-    Object.entries(answers).filter(([, answer]) => !isEmptyAnswer(answer)),
+    Object.entries(answers).filter(
+      ([fieldName, answer]) => !isEmptyAnswer(fieldName, answer),
+    ),
   );
 };

@@ -1,4 +1,5 @@
 import { DropdownOnToggleEffect } from '@/ui/layout/dropdown/components/DropdownOnToggleEffect';
+import { useIsInsideModal } from '@/ui/layout/modal/hooks/useIsInsideModal';
 import { DropdownInternalContainer } from '@/ui/layout/dropdown/components/internal/DropdownInternalContainer';
 import { DROPDOWN_BOUNDARY_BOTTOM_PADDING_DESKTOP } from '@/ui/layout/dropdown/constants/DropdownBoundaryBottomPaddingDesktop';
 import { DROPDOWN_BOUNDARY_BOTTOM_PADDING_MOBILE } from '@/ui/layout/dropdown/constants/DropdownBoundaryBottomPaddingMobile';
@@ -84,10 +85,16 @@ export const Dropdown = ({
   onOpen,
   clickableComponentWidth = 'auto',
   excludedClickOutsideIds,
-  isDropdownInModal = false,
+  isDropdownInModal: isDropdownInModalFromProps,
   disableClickForClickableComponent = false,
   middlewareBoundaryPadding = {},
 }: DropdownProps) => {
+  const isInsideModal = useIsInsideModal();
+
+  // A dropdown opened from inside a modal must float above it, or it renders
+  // under the modal backdrop. Callers can still force either layer.
+  const isDropdownInModal = isDropdownInModalFromProps ?? isInsideModal;
+
   const isDropdownOpen = useAtomComponentStateValue(
     isDropdownOpenComponentState,
     dropdownId,

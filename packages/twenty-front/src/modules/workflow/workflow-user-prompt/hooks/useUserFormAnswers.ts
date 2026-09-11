@@ -1,22 +1,10 @@
 import { type UserFormQuestionField } from '@/workflow/workflow-user-prompt/utils/getUserFormQuestionFields';
 import { isNonEmptyString } from '@sniptt/guards';
 import { useState } from 'react';
-import { isDefined } from 'twenty-shared/utils';
+import { isUserFormAnswerEmpty } from 'twenty-shared/workflow';
 import { type JsonValue } from 'type-fest';
 
 export type UserFormAnswers = Record<string, JsonValue>;
-
-const isEmptyAnswer = (answer: JsonValue | undefined) => {
-  if (!isDefined(answer)) {
-    return true;
-  }
-
-  if (typeof answer === 'string') {
-    return answer.trim().length === 0;
-  }
-
-  return Array.isArray(answer) && answer.length === 0;
-};
 
 export const useUserFormAnswers = ({
   questionFields,
@@ -52,9 +40,15 @@ export const useUserFormAnswers = ({
     });
   };
 
+  const isAnswered = ({ question, fieldDefinition }: UserFormQuestionField) =>
+    !isUserFormAnswerEmpty({
+      fieldType: fieldDefinition.type,
+      answer: answers[question.fieldName],
+    });
+
   const hasAnsweredEveryRequiredQuestion = questionFields.every(
-    ({ question }) =>
-      !question.isRequired || !isEmptyAnswer(answers[question.fieldName]),
+    (questionField) =>
+      !questionField.question.isRequired || isAnswered(questionField),
   );
 
   const canSubmit =
@@ -70,14 +64,14 @@ export const useUserFormAnswers = ({
 
     // An unanswered optional question is left out entirely, so saving the form
     // never blanks a field the person did not touch.
-    const answersToSubmit = Object.fromEntries(
+    const answersToSubmit: UserFormAnswers = Object.fromEntries(
       questionFields
+        .filter(isAnswered)
         .map(({ question }) => [
           question.fieldName,
           answers[question.fieldName],
-        ])
-        .filter(([, answer]) => !isEmptyAnswer(answer as JsonValue)),
-    ) as UserFormAnswers;
+        ]),
+    );
 
     void onSubmit(answersToSubmit);
   };

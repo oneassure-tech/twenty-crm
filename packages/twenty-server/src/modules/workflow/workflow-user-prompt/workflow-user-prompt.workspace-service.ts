@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
 import { msg } from '@lingui/core/macro';
+import { type FieldMetadataType } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { StepStatus, WorkflowActionType } from 'twenty-shared/workflow';
 
+import { getFlatFieldsFromFlatObjectMetadata } from 'src/engine/api/graphql/workspace-schema-builder/utils/get-flat-fields-for-flat-object-metadata.util';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system-auth-context.util';
 import {
@@ -14,6 +16,7 @@ import {
   WorkflowRunStatus,
   type WorkflowRunWorkspaceEntity,
 } from 'src/modules/workflow/common/standard-objects/workflow-run.workspace-entity';
+import { WorkflowCommonWorkspaceService } from 'src/modules/workflow/common/workspace-services/workflow-common.workspace-service';
 import { type WorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action.type';
 import { isWorkflowUserFormAction } from 'src/modules/workflow/workflow-executor/workflow-actions/user-form/guards/is-workflow-user-form-action.guard';
 import { isWorkflowUserPromptAction } from 'src/modules/workflow/workflow-executor/workflow-actions/user-prompt/guards/is-workflow-user-prompt-action.guard';
@@ -36,6 +39,7 @@ export class WorkflowUserPromptWorkspaceService {
     private readonly workflowRunWorkspaceService: WorkflowRunWorkspaceService,
     private readonly workflowRunnerWorkspaceService: WorkflowRunnerWorkspaceService,
     private readonly workflowUserPromptAnswerWriterWorkspaceService: WorkflowUserPromptAnswerWriterWorkspaceService,
+    private readonly workflowCommonWorkspaceService: WorkflowCommonWorkspaceService,
   ) {}
 
   async getPendingUserPrompts({
@@ -227,7 +231,16 @@ export class WorkflowUserPromptWorkspaceService {
       );
     }
 
-    const answersToWrite = resolveUserFormAnswers({ step, answers });
+    const fieldTypeByFieldName = await this.getFieldTypeByFieldName({
+      objectName: step.settings.input.objectName,
+      workspaceId,
+    });
+
+    const answersToWrite = resolveUserFormAnswers({
+      step,
+      answers,
+      fieldTypeByFieldName,
+    });
 
     const updatedRecord =
       await this.workflowUserPromptAnswerWriterWorkspaceService.writeFormAnswers(
@@ -362,6 +375,32 @@ export class WorkflowUserPromptWorkspaceService {
     }
 
     return { workflowRun, step };
+  }
+
+  // Whether an answer is blank depends on the field it lands in - a cleared
+  // link is an object, not an empty string - so validation needs the types.
+  private async getFieldTypeByFieldName({
+    objectName,
+    workspaceId,
+  }: {
+    objectName: string;
+    workspaceId: string;
+  }): Promise<Record<string, FieldMetadataType>> {
+    const { flatObjectMetadata, flatFieldMetadataMaps } =
+      await this.workflowCommonWorkspaceService.getObjectMetadataInfo(
+        objectName,
+        workspaceId,
+      );
+
+    return Object.fromEntries(
+      getFlatFieldsFromFlatObjectMetadata(
+        flatObjectMetadata,
+        flatFieldMetadataMaps,
+      ).map((flatFieldMetadata) => [
+        flatFieldMetadata.name,
+        flatFieldMetadata.type,
+      ]),
+    );
   }
 
   // A database-event run carries the acting member in its trigger payload; a
