@@ -30,7 +30,7 @@ import {
   useFloating,
 } from '@floating-ui/react';
 import { styled } from '@linaria/react';
-import { useId, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { Temporal } from 'temporal-polyfill';
 import { Key } from 'ts-key-enum';
 import { isDefined } from 'twenty-shared/utils';
@@ -247,19 +247,26 @@ export const FormDateTimeFieldInput = ({
 
   const isVariable = Boolean(isStandaloneVariableString(defaultValue));
 
-  const dateValue =
-    isVariable ||
-    !isDefined(defaultValue) ||
-    defaultValue === 'null' ||
-    defaultValue === ''
-      ? null
-      : defaultValue.includes('T')
-        ? Temporal.Instant.from(defaultValue).toZonedDateTimeISO(
-            timeZone ?? userTimezone,
-          )
-        : Temporal.PlainDate.from(defaultValue).toZonedDateTime(
-            timeZone ?? userTimezone,
-          );
+  // Kept stable until the value itself changes: the picker's time input
+  // rewrites its text whenever it receives a new date object, so rebuilding
+  // this on every render wiped a half-typed time back to the saved one as soon
+  // as anything above re-rendered.
+  const dateValue = useMemo(
+    () =>
+      isVariable ||
+      !isDefined(defaultValue) ||
+      defaultValue === 'null' ||
+      defaultValue === ''
+        ? null
+        : defaultValue.includes('T')
+          ? Temporal.Instant.from(defaultValue).toZonedDateTimeISO(
+              timeZone ?? userTimezone,
+            )
+          : Temporal.PlainDate.from(defaultValue).toZonedDateTime(
+              timeZone ?? userTimezone,
+            ),
+    [isVariable, defaultValue, timeZone, userTimezone],
+  );
 
   return (
     <FormFieldInputContainer>
