@@ -1,3 +1,4 @@
+import { FieldMetadataType } from 'twenty-shared/types';
 import { WorkflowActionType } from 'twenty-shared/workflow';
 
 import { WorkflowVersionStepException } from 'src/modules/workflow/common/exceptions/workflow-version-step.exception';
@@ -26,6 +27,13 @@ const buildStep = (
     },
   }) as WorkflowUserFormAction;
 
+const fieldTypeByFieldName = {
+  demoDate: FieldMetadataType.DATE,
+  seatCount: FieldMetadataType.NUMBER,
+  isQualified: FieldMetadataType.BOOLEAN,
+  website: FieldMetadataType.LINKS,
+};
+
 const requiredDemoDate = {
   id: 'ec3a6d64-2a0a-4d1e-a6de-9a1b9b0cc2a0',
   question: 'When is the demo scheduled?',
@@ -43,6 +51,7 @@ const optionalSeatCount = {
 describe('resolveUserFormAnswers', () => {
   it('should keep every answered question', () => {
     const answers = resolveUserFormAnswers({
+      fieldTypeByFieldName,
       step: buildStep([requiredDemoDate, optionalSeatCount]),
       answers: { demoDate: '2026-09-10T09:00:00.000Z', seatCount: 12 },
     });
@@ -55,6 +64,7 @@ describe('resolveUserFormAnswers', () => {
 
   it('should leave out an optional question that was not answered', () => {
     const answers = resolveUserFormAnswers({
+      fieldTypeByFieldName,
       step: buildStep([requiredDemoDate, optionalSeatCount]),
       answers: { demoDate: '2026-09-10T09:00:00.000Z', seatCount: null },
     });
@@ -64,6 +74,7 @@ describe('resolveUserFormAnswers', () => {
 
   it('should treat a blank string as no answer', () => {
     const answers = resolveUserFormAnswers({
+      fieldTypeByFieldName,
       step: buildStep([optionalSeatCount]),
       answers: { seatCount: '   ' },
     });
@@ -73,6 +84,7 @@ describe('resolveUserFormAnswers', () => {
 
   it('should keep a false answer, which is a real answer', () => {
     const answers = resolveUserFormAnswers({
+      fieldTypeByFieldName,
       step: buildStep([{ ...optionalSeatCount, fieldName: 'isQualified' }]),
       answers: { isQualified: false },
     });
@@ -83,6 +95,7 @@ describe('resolveUserFormAnswers', () => {
   it('should throw when a required question was left unanswered', () => {
     expect(() =>
       resolveUserFormAnswers({
+        fieldTypeByFieldName,
         step: buildStep([requiredDemoDate]),
         answers: {},
       }),
@@ -92,6 +105,7 @@ describe('resolveUserFormAnswers', () => {
   it('should throw when an answer targets a field the step does not ask about', () => {
     expect(() =>
       resolveUserFormAnswers({
+        fieldTypeByFieldName,
         step: buildStep([requiredDemoDate]),
         answers: {
           demoDate: '2026-09-10T09:00:00.000Z',
@@ -99,5 +113,31 @@ describe('resolveUserFormAnswers', () => {
         },
       }),
     ).toThrow(WorkflowVersionStepException);
+  });
+
+  it('should throw when a required link was cleared', () => {
+    expect(() =>
+      resolveUserFormAnswers({
+        fieldTypeByFieldName,
+        step: buildStep([
+          { ...requiredDemoDate, fieldName: 'website', isRequired: true },
+        ]),
+        answers: {
+          website: { primaryLinkUrl: '', primaryLinkLabel: '' },
+        },
+      }),
+    ).toThrow(WorkflowVersionStepException);
+  });
+
+  it('should leave out an optional link that was cleared', () => {
+    const answers = resolveUserFormAnswers({
+      fieldTypeByFieldName,
+      step: buildStep([{ ...optionalSeatCount, fieldName: 'website' }]),
+      answers: {
+        website: { primaryLinkUrl: '  ', primaryLinkLabel: '' },
+      },
+    });
+
+    expect(answers).toEqual({});
   });
 });

@@ -137,6 +137,7 @@ export { canObjectBeManagedByAutomation } from './utils/canObjectBeManagedByAuto
 export { extractRawVariableNamePart } from './utils/extractRawVariableNameParts';
 export { getFunctionInputFromInputSchema } from './utils/getFunctionInputFromInputSchema';
 export { getWorkflowRunContext } from './utils/getWorkflowRunContext';
+export { isUserFormAnswerEmpty } from './utils/isUserFormAnswerEmpty';
 export { parseBooleanFromStringValue } from './utils/parseBooleanFromStringValue';
 export { parseDataFromContentType } from './utils/parseDataFromContentType';
 export {
