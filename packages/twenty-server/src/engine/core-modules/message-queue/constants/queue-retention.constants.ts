@@ -1,6 +1,6 @@
 export const QUEUE_RETENTION = {
-  completedMaxAge: 14400, // 4 hours (4*3600s)
-  completedMaxCount: 1000,
-  failedMaxAge: 604800, // 7 days (7*24*3600s)
-  failedMaxCount: 1000,
+  completedMaxAge: 1800, // 30 minutes — keep Redis small on shared 256Mi-class instances
+  completedMaxCount: 75,
+  failedMaxAge: 86400, // 1 day
+  failedMaxCount: 50,
 };
