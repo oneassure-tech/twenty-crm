@@ -274,10 +274,8 @@ export class BullMQDriver
     const queueOptions: JobsOptions = {
       priority: options?.priority,
       repeat: options?.repeat,
-      removeOnComplete: {
-        age: QUEUE_RETENTION.completedMaxAge,
-        count: QUEUE_RETENTION.completedMaxCount,
-      },
+      // Drop completed jobs immediately to avoid Redis growth on small instances.
+      removeOnComplete: true,
       removeOnFail: {
         age: QUEUE_RETENTION.failedMaxAge,
         count: QUEUE_RETENTION.failedMaxCount,
@@ -338,10 +336,8 @@ export class BullMQDriver
       jobId: options?.id ? `${options.id}-${v4()}` : undefined, // We add V4() to id to make sure ids are uniques so we can add a waiting job when a job related with the same option.id is running
       priority: options?.priority ?? MESSAGE_QUEUE_PRIORITY[queueName],
       attempts: 1 + (options?.retryLimit || 0),
-      removeOnComplete: {
-        age: QUEUE_RETENTION.completedMaxAge,
-        count: QUEUE_RETENTION.completedMaxCount,
-      },
+      // Drop completed jobs immediately to avoid Redis growth on small instances.
+      removeOnComplete: true,
       removeOnFail: {
         age: QUEUE_RETENTION.failedMaxAge,
         count: QUEUE_RETENTION.failedMaxCount,
