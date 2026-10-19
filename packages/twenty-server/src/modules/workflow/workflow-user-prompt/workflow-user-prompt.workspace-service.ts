@@ -23,6 +23,7 @@ import { isWorkflowUserPromptAction } from 'src/modules/workflow/workflow-execut
 import { WorkflowRunWorkspaceService } from 'src/modules/workflow/workflow-runner/workflow-run/workflow-run.workspace-service';
 import { WorkflowRunnerWorkspaceService } from 'src/modules/workflow/workflow-runner/workspace-services/workflow-runner.workspace-service';
 import { WorkflowUserPromptAnswerWriterWorkspaceService } from 'src/modules/workflow/workflow-user-prompt/workflow-user-prompt-answer-writer.workspace-service';
+import { isUserPromptStepRequired } from 'src/modules/workflow/workflow-user-prompt/utils/is-user-prompt-step-required.util';
 import { resolveUserFormAnswers } from 'src/modules/workflow/workflow-user-prompt/utils/resolve-user-form-answers.util';
 import { resolveUserPromptAnswer } from 'src/modules/workflow/workflow-user-prompt/utils/resolve-user-prompt-answer.util';
 import {
@@ -104,6 +105,7 @@ export class WorkflowUserPromptWorkspaceService {
               otherOptionLabel,
               objectNameSingular: step.settings.input.objectName,
               questions: [],
+              isRequired: isUserPromptStepRequired(step),
             },
           ];
         }
@@ -124,6 +126,7 @@ export class WorkflowUserPromptWorkspaceService {
               otherOptionLabel: '',
               objectNameSingular: objectName,
               questions,
+              isRequired: isUserPromptStepRequired(step),
             },
           ];
         }
@@ -276,6 +279,9 @@ export class WorkflowUserPromptWorkspaceService {
   // in. The step is skipped rather than answered, which lets the executor walk
   // forward and skip whatever depended on it, so the run ends instead of
   // parking on a question nobody can answer.
+  //
+  // A required question is refused here. The modal offers no Close button for
+  // one, and this is what stops any other client from skipping it anyway.
   async skipUserPrompt({
     workspaceId,
     workspaceMemberId,
@@ -300,6 +306,16 @@ export class WorkflowUserPromptWorkspaceService {
         WorkflowVersionStepExceptionCode.INVALID_REQUEST,
         {
           userFriendlyMessage: msg`This step cannot be closed`,
+        },
+      );
+    }
+
+    if (isUserPromptStepRequired(step)) {
+      throw new WorkflowVersionStepException(
+        'This user prompt is required and cannot be skipped',
+        WorkflowVersionStepExceptionCode.INVALID_REQUEST,
+        {
+          userFriendlyMessage: msg`This question has to be answered`,
         },
       );
     }

@@ -16,6 +16,7 @@ export type PendingUserPrompt = {
   otherOptionLabel: string;
   objectNameSingular: string;
   questions: UserFormQuestion[];
+  isRequired: boolean;
 };
 
 export type UpdatedRecordInfo = {

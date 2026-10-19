@@ -79,6 +79,7 @@ export const WorkflowUserPromptModal = ({
         onEnter={submit}
       />
       <WorkflowUserPromptModalFooter
+        isRequired={prompt.isRequired}
         onClose={() => void close()}
         onSave={submit}
         isSaveDisabled={!canSubmit}

@@ -31,6 +31,12 @@ export const workflowUserPromptActionSettingsSchema =
       otherOptionLabel: z
         .string()
         .describe('Label of the free-text choice, defaults to "Other".'),
+      isRequired: z
+        .boolean()
+        .optional()
+        .describe(
+          'Whether the question must be answered. A required question offers no Close button and cannot be skipped.',
+        ),
       objectName: z
         .string()
         .describe(

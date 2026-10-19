@@ -7,6 +7,7 @@ import { WorkflowStepBody } from '@/workflow/workflow-steps/components/WorkflowS
 import { WorkflowStepCmdEnterButton } from '@/workflow/workflow-steps/components/WorkflowStepCmdEnterButton';
 import { WorkflowUserPromptAnswerForm } from '@/workflow/workflow-user-prompt/components/WorkflowUserPromptAnswerForm';
 import { useSkipUserPrompt } from '@/workflow/workflow-user-prompt/hooks/useSkipUserPrompt';
+import { isUserPromptStepRequired } from '@/workflow/workflow-user-prompt/utils/isUserPromptStepRequired';
 import { useSubmitUserPrompt } from '@/workflow/workflow-user-prompt/hooks/useSubmitUserPrompt';
 import { useUserPromptAnswer } from '@/workflow/workflow-user-prompt/hooks/useUserPromptAnswer';
 import { useLingui } from '@lingui/react/macro';
@@ -85,13 +86,17 @@ export const WorkflowEditActionUserPromptFiller = ({
       {!actionOptions.readonly && (
         <SidePanelFooter
           actions={[
-            <Button
-              title={t`Close`}
-              variant="secondary"
-              disabled={isSubmittingUserPrompt || isSkippingUserPrompt}
-              isLoading={isSkippingUserPrompt}
-              onClick={() => void close()}
-            />,
+            ...(isUserPromptStepRequired(action)
+              ? []
+              : [
+                  <Button
+                    title={t`Close`}
+                    variant="secondary"
+                    disabled={isSubmittingUserPrompt || isSkippingUserPrompt}
+                    isLoading={isSkippingUserPrompt}
+                    onClick={() => void close()}
+                  />,
+                ]),
             <WorkflowStepCmdEnterButton
               title={t`Save`}
               onClick={submit}
