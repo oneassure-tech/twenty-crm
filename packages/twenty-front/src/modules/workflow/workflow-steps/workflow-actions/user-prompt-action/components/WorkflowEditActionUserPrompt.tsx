@@ -170,10 +170,7 @@ export const WorkflowEditActionUserPrompt = ({
     )
     .map((field) => ({ label: field.label, value: field.name }));
 
-  const handleOptionDragEnd: OnDragEndResponder = ({
-    source,
-    destination,
-  }) => {
+  const handleOptionDragEnd: OnDragEndResponder = ({ source, destination }) => {
     const movedOption = formData.options.at(source.index);
 
     if (!isDefined(movedOption) || !isDefined(destination)) {
@@ -208,7 +205,7 @@ export const WorkflowEditActionUserPrompt = ({
               variant="neutral"
               isClosable={false}
               title={t`Add the options to choose from`}
-              description={t`When this step runs, the person who triggered the workflow is asked to pick exactly one of these options. They cannot dismiss the question.`}
+              description={t`When this step runs, the person who triggered the workflow is asked to pick exactly one of these options.`}
             />
           )}
 
@@ -307,6 +304,14 @@ export const WorkflowEditActionUserPrompt = ({
             readonly={isFormDisabled}
           />
         )}
+
+        <FormBooleanFieldToggleInput
+          description={t`Required`}
+          value={formData.isRequired === true}
+          onChange={(isRequired) => updateFormData({ isRequired })}
+          disabled={isFormDisabled}
+          hint={t`The question cannot be closed or skipped: the person has to answer it before they can carry on.`}
+        />
 
         <FormSelectFieldInput
           label={t`Object`}

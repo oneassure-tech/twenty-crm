@@ -74,4 +74,10 @@ export class PendingUserPromptDTO {
     description: 'Questions asked together, when this is an Ask User Form step',
   })
   questions: PendingUserPromptQuestionDTO[];
+
+  @Field(() => Boolean, {
+    description:
+      'Whether this question must be answered, and so cannot be closed',
+  })
+  isRequired: boolean;
 }

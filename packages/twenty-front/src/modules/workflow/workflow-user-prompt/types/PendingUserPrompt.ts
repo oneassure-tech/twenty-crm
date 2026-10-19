@@ -22,4 +22,7 @@ export type PendingUserPrompt = {
   otherOptionLabel: string;
   objectNameSingular: string;
   questions: PendingUserPromptQuestion[];
+  // A required question offers no way out: the modal hides its Close button
+  // and the server refuses to skip the step.
+  isRequired: boolean;
 };
