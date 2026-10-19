@@ -20,6 +20,7 @@ export const PENDING_USER_PROMPTS = gql`
         fieldName
         isRequired
       }
+      isRequired
     }
   }
 `;

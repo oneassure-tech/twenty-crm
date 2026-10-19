@@ -515,6 +515,7 @@ export class WorkflowVersionStepOperationsWorkspaceService {
                 options: [],
                 allowOtherOption: false,
                 otherOptionLabel: 'Other',
+                isRequired: false,
                 objectName: '',
                 objectRecordId: '{{trigger.recordId}}',
                 fieldName: '',

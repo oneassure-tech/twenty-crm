@@ -105,7 +105,7 @@ export const WorkflowEditActionUserFormQuestion = ({
         value={question.isRequired}
         onChange={(isRequired) => onChange({ isRequired })}
         disabled={readonly}
-        hint={t`The form cannot be saved until this question is answered. An optional question left blank leaves its field untouched.`}
+        hint={t`The form cannot be saved or closed until this question is answered. An optional question left blank leaves its field untouched.`}
       />
     </StyledQuestionCard>
   );

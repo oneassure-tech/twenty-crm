@@ -10,6 +10,8 @@ export type UserPromptInput = {
   options: UserPromptOption[];
   allowOtherOption: boolean;
   otherOptionLabel: string;
+  // Optional: steps built before this setting existed do not carry it.
+  isRequired?: boolean;
   objectName: string;
   objectRecordId: string;
   fieldName: string;

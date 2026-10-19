@@ -4,6 +4,7 @@ import { Button } from 'twenty-ui/input';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 export type WorkflowUserPromptModalFooterProps = {
+  isRequired: boolean;
   onClose: () => void;
   onSave: () => void;
   isSaveDisabled: boolean;
@@ -19,6 +20,7 @@ const StyledFooter = styled.div`
 `;
 
 export const WorkflowUserPromptModalFooter = ({
+  isRequired,
   onClose,
   onSave,
   isSaveDisabled,
@@ -29,13 +31,15 @@ export const WorkflowUserPromptModalFooter = ({
 
   return (
     <StyledFooter>
-      <Button
-        title={t`Close`}
-        variant="secondary"
-        disabled={isSaving || isClosing}
-        isLoading={isClosing}
-        onClick={onClose}
-      />
+      {!isRequired && (
+        <Button
+          title={t`Close`}
+          variant="secondary"
+          disabled={isSaving || isClosing}
+          isLoading={isClosing}
+          onClick={onClose}
+        />
+      )}
       <Button
         title={t`Save`}
         variant="primary"
