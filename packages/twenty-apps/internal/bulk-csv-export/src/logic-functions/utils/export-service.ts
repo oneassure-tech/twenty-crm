@@ -54,7 +54,7 @@ type ExportJobRecord = {
 
 type ExportChunkRecord = {
   id: string;
-  position?: number | null;
+  chunkIndex?: number | null;
   csv?: string | null;
 };
 
@@ -158,7 +158,7 @@ const findChunk = async (
     {
       depth: 0,
       limit: 1,
-      filter: `and(jobId[eq]:${jobId},position[eq]:${position})`,
+      filter: `and(jobId[eq]:${jobId},chunkIndex[eq]:${position})`,
     },
   );
 
@@ -176,7 +176,7 @@ const loadChunkCsv = async (jobId: string): Promise<string> => {
       {
         depth: 0,
         limit: 50,
-        order_by: 'position[AscNullsFirst]',
+        order_by: 'chunkIndex[AscNullsFirst]',
         filter: `jobId[eq]:${jobId}`,
         ...(cursor ? { starting_after: cursor } : {}),
       },
@@ -184,7 +184,7 @@ const loadChunkCsv = async (jobId: string): Promise<string> => {
 
     for (const record of page.records) {
       parts.push({
-        position: asNumber(record.position),
+        position: asNumber(record.chunkIndex),
         csv: asString(record.csv),
       });
     }
@@ -347,7 +347,7 @@ export const advanceExportJob = async (
       {
         name: `${objectNamePlural} part ${pageIndex}`,
         jobId: job.id,
-        position: pageIndex,
+        chunkIndex: pageIndex,
         csv,
       },
     );
