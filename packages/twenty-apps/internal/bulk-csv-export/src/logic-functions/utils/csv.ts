@@ -3,7 +3,7 @@ import { EXPORT_MAX_SELECTED_IDS } from 'src/constants/universal-identifiers';
 const OBJECT_NAME_PLURAL = /^[A-Za-z][A-Za-z0-9]*$/;
 const RECORD_ID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const RECORD_FILTER = /^[A-Za-z0-9_.,:[\]"'{}()\- ]+$/;
+const RECORD_FILTER = /^[A-Za-z0-9_.,:[\]"'{}()\- %]+$/;
 
 const SKIPPED_RECORD_KEYS = new Set(['searchVector']);
 
