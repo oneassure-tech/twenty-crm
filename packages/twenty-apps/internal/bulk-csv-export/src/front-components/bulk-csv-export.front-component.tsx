@@ -47,6 +47,58 @@ type FilterRow = FilterDraft & { id: number };
 const MAX_FILTERS = 8;
 const FIELD_GROUPS = ['Dates', 'Choices', 'Other'] as const;
 
+const PANEL_STYLES = `
+.oa-bulk-export-primary {
+  background: var(--t-accent-accent4060);
+  color: #ffffff;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.oa-bulk-export-primary:not(:disabled):hover {
+  filter: brightness(1.25);
+}
+.oa-bulk-export-primary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.oa-bulk-export-secondary {
+  background: var(--t-background-secondary);
+  color: var(--t-font-color-primary);
+  border: 1px solid var(--t-border-color-medium);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.oa-bulk-export-secondary:not(:disabled):hover {
+  background: var(--t-background-tertiary);
+}
+.oa-bulk-export-secondary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.oa-bulk-export-link {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--t-color-blue);
+  font: inherit;
+  font-size: var(--t-font-size-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.oa-bulk-export-link:hover {
+  filter: brightness(1.25);
+}
+.oa-bulk-export-link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+`;
+
 const readValue = (event: SyntheticEvent<HTMLElement>): string => {
   const object = event as {
     detail?: { value?: string };
@@ -136,6 +188,7 @@ const BulkCsvExport = () => {
   const [catalogError, setCatalogError] = useState('');
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [objectNamePlural, setObjectNamePlural] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<FilterRow[]>([
     { id: 1, fieldPath: '', operator: '', value: '' },
   ]);
@@ -143,6 +196,16 @@ const BulkCsvExport = () => {
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState('Ready to export.');
   const [downloadUrl, setDownloadUrl] = useState<string | undefined>();
+
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = PANEL_STYLES;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,11 +236,15 @@ const BulkCsvExport = () => {
 
   const currentObject = objects.find((object) => object.namePlural === objectNamePlural);
   const filtersLocked = selectedOnly || running;
+  const activeFilters = filtersOpen ? filters : [];
   const summary =
     currentObject && !selectedOnly
-      ? describeFilters(currentObject.label, currentObject.fields, filters)
+      ? filtersOpen
+        ? describeFilters(currentObject.label, currentObject.fields, filters)
+        : `${currentObject.label}, every record and every field`
       : '';
   const filtersIncomplete =
+    filtersOpen &&
     !selectedOnly &&
     filters.some((row) => {
       if (!row.fieldPath || !currentObject) {
@@ -236,6 +303,12 @@ const BulkCsvExport = () => {
     });
   };
 
+  const clearFilters = () => {
+    nextFilterId.current = 1;
+    setFilters([{ id: 1, fieldPath: '', operator: '', value: '' }]);
+    setFiltersOpen(false);
+  };
+
   const handleExport = async () => {
     setRunning(true);
     setDownloadUrl(undefined);
@@ -244,7 +317,7 @@ const BulkCsvExport = () => {
       const objectName = assertObjectNamePlural(objectNamePlural);
       const filter = selectedOnly
         ? buildSelectedIdFilter(selectedRecordIds)
-        : buildExportFilter(currentObject?.fields ?? [], filters);
+        : buildExportFilter(currentObject?.fields ?? [], activeFilters);
 
       setProgress('Creating the export…');
 
@@ -306,10 +379,8 @@ const BulkCsvExport = () => {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h2 style={styles.title}>Bulk CSV export</h2>
         <p style={styles.subtitle}>
-          Choose an object, then optionally filter it. Leave the filters empty
-          to download every record.
+          Choose an object to download every record and every field.
         </p>
       </div>
       <div style={styles.body}>
@@ -323,6 +394,7 @@ const BulkCsvExport = () => {
           disabled={running || catalogLoading || Boolean(catalogError)}
           onChange={(event) => {
             setObjectNamePlural(readValue(event));
+            setFiltersOpen(false);
             setFilters([{ id: 1, fieldPath: '', operator: '', value: '' }]);
             nextFilterId.current = 1;
             setDownloadUrl(undefined);
@@ -351,12 +423,22 @@ const BulkCsvExport = () => {
             {selectedRecordIds.length === 1 ? '' : 's'} only
           </label>
         )}
-        {currentObject && !selectedOnly && (
+        {currentObject && !selectedOnly && !filtersOpen && (
+          <button
+            type="button"
+            className="oa-bulk-export-link"
+            disabled={running}
+            onClick={() => setFiltersOpen(true)}
+          >
+            Add filters
+          </button>
+        )}
+        {currentObject && !selectedOnly && filtersOpen && (
           <div style={styles.filters}>
             <span style={styles.label}>Filters</span>
             <span style={styles.helper}>
-              Pick a field, a condition, and a value. The date picker appears
-              only for date fields.
+              Choose a field and a condition. A date picker appears only for
+              date fields.
             </span>
             {filters.map((row, index) => {
               const field = currentObject.fields.find(
@@ -498,14 +580,14 @@ const BulkCsvExport = () => {
                     </>
                   )}
                   {filters.length > 1 && (
-                    <button
-                      type="button"
-                      style={styles.textButton}
-                      disabled={filtersLocked}
-                      onClick={() => removeFilter(row.id)}
-                    >
-                      Remove filter
-                    </button>
+              <button
+                type="button"
+                className="oa-bulk-export-link"
+                disabled={filtersLocked}
+                onClick={() => removeFilter(row.id)}
+              >
+                Remove filter
+              </button>
                   )}
                 </div>
               );
@@ -513,25 +595,36 @@ const BulkCsvExport = () => {
             {filters.length < MAX_FILTERS && (
               <button
                 type="button"
-                style={styles.textButton}
+                className="oa-bulk-export-link"
                 disabled={filtersLocked}
                 onClick={addFilter}
               >
                 Add another filter
               </button>
             )}
+            <button
+              type="button"
+              className="oa-bulk-export-link"
+              disabled={running}
+              onClick={clearFilters}
+            >
+              Remove filters
+            </button>
             {summary && <p style={styles.summary}>{summary}</p>}
           </div>
         )}
+        {summary && !filtersOpen && <p style={styles.summary}>{summary}</p>}
         {selectedOnly && (
-          <p style={styles.helper}>
-            The selected rows are exported as they are. Turn this off to filter
-            the whole object, including by date.
-          </p>
+          <p style={styles.helper}>Only the selected rows will be exported.</p>
         )}
         <p style={styles.progress}>{progress}</p>
         {downloadUrl && (
-          <a href={downloadUrl} target="_blank" rel="noreferrer" style={styles.link}>
+          <a
+            href={downloadUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="oa-bulk-export-link"
+          >
             Download CSV
           </a>
         )}
@@ -539,7 +632,8 @@ const BulkCsvExport = () => {
       <div style={styles.footer}>
         <button
           type="button"
-          style={{ ...styles.button, ...styles.secondary }}
+          className="oa-bulk-export-secondary"
+          style={styles.button}
           onClick={handleClose}
           disabled={running}
         >
@@ -547,16 +641,8 @@ const BulkCsvExport = () => {
         </button>
         <button
           type="button"
-          style={{
-            ...styles.button,
-            ...styles.primary,
-            ...(running ||
-            catalogLoading ||
-            !objectNamePlural ||
-            filtersIncomplete
-              ? styles.primaryDisabled
-              : {}),
-          }}
+          className="oa-bulk-export-primary"
+          style={styles.button}
           onClick={handleExport}
           disabled={running || catalogLoading || !objectNamePlural || filtersIncomplete}
         >
@@ -579,11 +665,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 'var(--t-font-size-sm)',
   },
   header: { display: 'flex', flexDirection: 'column', gap: 'var(--t-spacing-2)' },
-  title: {
-    margin: 0,
-    fontSize: 'var(--t-font-size-md)',
-    fontWeight: 'var(--t-font-weight-semi-bold)',
-  },
   subtitle: { margin: 0, color: 'var(--t-font-color-secondary)' },
   body: { display: 'flex', flexDirection: 'column', gap: 'var(--t-spacing-2)' },
   label: { fontWeight: 'var(--t-font-weight-medium)' },
@@ -620,36 +701,13 @@ const styles: Record<string, CSSProperties> = {
   },
   summary: { margin: 0, color: 'var(--t-font-color-secondary)' },
   progress: { margin: 0, color: 'var(--t-font-color-secondary)' },
-  link: { color: 'var(--t-color-blue)' },
-  textButton: {
-    alignSelf: 'flex-start',
-    border: 'none',
-    background: 'transparent',
-    color: 'var(--t-font-color-secondary)',
-    fontFamily: 'var(--t-font-family)',
-    fontSize: 'var(--t-font-size-sm)',
-    padding: 0,
-    cursor: 'pointer',
-  },
   footer: { display: 'flex', justifyContent: 'flex-end', gap: 'var(--t-spacing-2)' },
   button: {
-    border: '1px solid var(--t-border-color-medium)',
     borderRadius: 'var(--t-border-radius-sm)',
     fontFamily: 'var(--t-font-family)',
     fontSize: 'var(--t-font-size-sm)',
     padding: 'var(--t-spacing-2) var(--t-spacing-3)',
-    cursor: 'pointer',
   },
-  secondary: {
-    background: 'var(--t-background-secondary)',
-    color: 'var(--t-font-color-primary)',
-  },
-  primary: {
-    background: 'var(--t-accent-accent4060)',
-    color: 'var(--t-font-color-inverted)',
-    border: 'none',
-  },
-  primaryDisabled: { opacity: 0.6, cursor: 'default' },
 };
 
 export default defineFrontComponent({
